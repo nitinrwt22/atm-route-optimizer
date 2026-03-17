@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ATM Route Optimizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>ATM Cash Replenishment System</h1>
+    </header>
+
+    <div class="container">
+
+        <!-- LEFT PANEL -->
+        <div class="sidebar">
+            <h2>Controls</h2>
+
+            <button onclick="loadData()">Load Data</button>
+
+            <label>Select Algorithm:</label>
+            <select id="algo">
+                <option>Nearest Neighbor</option>
+                <option>2-Opt</option>
+            </select>
+
+            <button onclick="runAlgorithm()">Run</button>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="main">
+            <canvas id="map" width="800" height="500"></canvas>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

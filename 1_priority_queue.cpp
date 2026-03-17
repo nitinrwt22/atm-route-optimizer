@@ -156,6 +156,41 @@ void saveToFile(const vector<ATM>& atms, const string& filename) {
     out.close();
     cout << "\n[FILE] All 100 ATM records saved to '" << filename << "'\n";
 }
+void saveToJSON(vector<ATM> &atms, vector<int> &route) {
+    ofstream file("output.json");
+
+    file << "{\n";
+    file << "  \"atms\": [\n";
+
+    for (int i = 0; i < atms.size(); i++) {
+        file << "    {";
+        file << "\"id\": " << atms[i].id << ", ";
+        file << "\"name\": \"" << atms[i].name << "\", ";
+        file << "\"location\": \"" << atms[i].location << "\", ";
+        file << "\"x\": " << atms[i].x << ", ";
+        file << "\"y\": " << atms[i].y << ", ";
+        file << "\"cashLevel\": " << atms[i].cashLevel << ", ";
+        file << "\"urgency\": " << atms[i].urgencyScore << ", ";
+        file << "\"days\": " << atms[i].daysSinceRefill;
+        file << "}";
+
+        if (i != atms.size() - 1) file << ",";
+        file << "\n";
+    }
+
+    file << "  ],\n";
+
+    file << "  \"route\": [";
+    for (int i = 0; i < route.size(); i++) {
+        file << route[i];
+        if (i != route.size() - 1) file << ",";
+    }
+    file << "]\n";
+
+    file << "}\n";
+
+    file.close();
+}
 
 // ============================================================
 //  MAIN
@@ -253,7 +288,8 @@ int main() {
              << setw(10) << status
              << "\n";
     }
-
+vector<int> route;
+for (auto &atm : atms) route.push_back(atm.id); //dummy route (just ATM IDs in order of urgency)
     // ── Summary Statistics ────────────────────────────────────
     cout << "\n" << string(105, '=') << "\n";
     cout << "  SUMMARY (across all 100 ATMs)\n";
@@ -271,6 +307,6 @@ int main() {
 
     // ── Save all 100 ATMs to file ─────────────────────────────
     saveToFile(sorted, "atm_data.txt");
-
+    saveToJSON(atms, route);
     return 0;
 }

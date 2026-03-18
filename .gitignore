@@ -1,0 +1,25 @@
+# Compiled binaries (never push these)
+*.exe
+*.out
+atm_optimizer
+priority_queue
+
+# C++ build artifacts
+*.o
+*.obj
+*.dSYM/
+
+# Auto-generated output files (rebuilt by running the program)
+atm_data.txt
+output.json
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor / IDE folders
+.vscode/
+.idea/
+*.swp
+*.swo

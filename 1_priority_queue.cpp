@@ -1,11 +1,4 @@
-// ============================================================
-//  ATM Cash Replenishment Optimizer
-//  Course: Design and Analysis of Algorithms (DAA)
-//  Description: Uses a Max-Heap Priority Queue (STL) to rank
-//               100 ATMs by urgency score so replenishment
-//               trucks can be dispatched optimally.
-//  Time Complexity: O(n log n) — heap construction + n pops
-// ============================================================
+// ATM Cash Replenishment Optimizer — Time-Based Predictive Urgency Model (Min-Heap Priority Queue)
 
 #include <iostream>
 #include <fstream>
@@ -13,30 +6,29 @@
 #include <string>
 #include <vector>
 #include <queue>
-#include <cstdlib>   // srand, rand
+#include <cstdlib>
 #include <cmath>
+#include <limits>
 
 using namespace std;
 
-// ============================================================
-//  PART 1: ATM Data Structure
-// ============================================================
+// Fixed ATM cash capacity in rupees (₹10,00,000 = ₹10 lakh per machine)
+const double ATM_CAPACITY = 1000000.0;
 
+// ATM data structure with time-to-empty prediction field
 struct ATM {
     int    id;
     string name;
     string location;
-    double x, y;                  // city-grid coordinates [0, 100]
-    double cashLevel;             // % cash remaining [0, 100]
-    double dailyWithdrawalRate;   // thousands ₹ per day [500, 5000]
-    int    daysSinceRefill;       // [1, 15]
-    double urgencyScore;          // calculated below
-    int    truckAssigned;         // -1 = unassigned
+    double x, y;
+    double cashLevel;
+    double dailyWithdrawalRate;
+    int    daysSinceRefill;
+    double timeToEmpty;    // hours until ATM runs out of cash
+    int    truckAssigned;
 };
 
-// ============================================================
-//  100 Realistic Indian City Area Names
-// ============================================================
+// 100 Realistic Indian City Area Names
 const string LOCATIONS[100] = {
     "Connaught Place",    "Lajpat Nagar",       "Karol Bagh",
     "Saket",              "Dwarka Sector 10",    "Rohini Sector 3",
@@ -74,60 +66,42 @@ const string LOCATIONS[100] = {
     "Sarita Vihar",       "Jasola Vihar"
 };
 
-// ============================================================
-//  Urgency Score Formula
-//  urgencyScore = (100 - cashLevel) * 0.5
-//               + (dailyWithdrawalRate / 500.0) * 0.3
-//               + (daysSinceRefill * 2.0) * 0.2
-// ============================================================
-double calculateUrgency(const ATM& atm) {
-    double cashFactor     = (100.0 - atm.cashLevel) * 0.5;
-    double rateFactor     = (atm.dailyWithdrawalRate / 500.0) * 0.3;
-    double daysFactor     = (atm.daysSinceRefill * 2.0) * 0.2;
-    return cashFactor + rateFactor + daysFactor;
+// cashLevel is a percentage (0–100%), but dailyWithdrawalRate is in actual rupees.
+// We must convert to actual cash first so both sides of the division share the same unit.
+double calculateTimeToEmpty(const ATM& atm) {
+    if (atm.cashLevel <= 0.0)            return 0.0;
+    if (atm.dailyWithdrawalRate <= 0.0)  return numeric_limits<double>::max();
+    double actualCash = (atm.cashLevel / 100.0) * ATM_CAPACITY; // % → ₹
+    double hourlyRate = atm.dailyWithdrawalRate / 24.0;
+    return actualCash / hourlyRate;
 }
 
-// ============================================================
-//  PART 2: Custom Comparator for Max-Heap
-//  STL priority_queue is a max-heap by default with std::less,
-//  but we need comparison on urgencyScore, so we write our own.
-// ============================================================
-struct CompareUrgency {
-    // Returns true if a has LOWER priority than b
-    // (so b gets popped first — higher urgency first)
+// Min-heap comparator: ATM with smaller timeToEmpty has higher priority (runs out sooner)
+struct CompareTime {
     bool operator()(const ATM& a, const ATM& b) const {
-        return a.urgencyScore < b.urgencyScore;
+        return a.timeToEmpty > b.timeToEmpty; // smaller timeToEmpty = higher priority
     }
 };
 
-// ============================================================
-//  Helper: Determine status label from urgency score
-// ============================================================
-string getStatus(double score) {
-    if (score > 70.0)       return "CRITICAL";
-    else if (score >= 50.0) return "HIGH    ";
-    else if (score >= 30.0) return "MEDIUM  ";
-    else                    return "LOW     ";
+// Time-based status classification
+string getStatus(double timeToEmpty) {
+    if (timeToEmpty <= 2.0)       return "CRITICAL";
+    else if (timeToEmpty <= 6.0)  return "HIGH    ";
+    else if (timeToEmpty <= 12.0) return "MEDIUM  ";
+    else                          return "LOW     ";
 }
 
-// ============================================================
-//  Helper: Random double in [lo, hi]
-// ============================================================
+// Random double in [lo, hi]
 double randDouble(double lo, double hi) {
     return lo + (static_cast<double>(rand()) / RAND_MAX) * (hi - lo);
 }
 
-// ============================================================
-//  Helper: Random int in [lo, hi] inclusive
-// ============================================================
+// Random int in [lo, hi] inclusive
 int randInt(int lo, int hi) {
     return lo + rand() % (hi - lo + 1);
 }
 
-// ============================================================
-//  PART 3: Save all ATM data to atm_data.txt (CSV format)
-//  Format: id,name,location,x,y,cashLevel,dailyRate,daysSinceRefill,urgencyScore
-// ============================================================
+// Save all ATM records to CSV file including timeToEmpty
 void saveToFile(const vector<ATM>& atms, const string& filename) {
     ofstream out(filename);
     if (!out.is_open()) {
@@ -135,120 +109,108 @@ void saveToFile(const vector<ATM>& atms, const string& filename) {
         return;
     }
 
-    // CSV header
     out << "id,name,location,x,y,cashLevel,dailyWithdrawalRate,"
-        << "daysSinceRefill,urgencyScore,status\n";
+        << "daysSinceRefill,timeToEmpty_hrs,status\n";
 
     for (const ATM& a : atms) {
         out << fixed << setprecision(2);
-        out << a.id           << ","
-            << a.name         << ","
-            << a.location     << ","
-            << a.x            << ","
-            << a.y            << ","
-            << a.cashLevel    << ","
-            << a.dailyWithdrawalRate << ","
-            << a.daysSinceRefill     << ","
-            << a.urgencyScore        << ","
-            << getStatus(a.urgencyScore) << "\n";
+        out << a.id                   << ","
+            << a.name                 << ","
+            << a.location             << ","
+            << a.x                    << ","
+            << a.y                    << ","
+            << a.cashLevel            << ","
+            << a.dailyWithdrawalRate  << ","
+            << a.daysSinceRefill      << ","
+            << (a.timeToEmpty >= 1e9 ? 9999.99 : a.timeToEmpty) << ","
+            << getStatus(a.timeToEmpty) << "\n";
     }
 
     out.close();
     cout << "\n[FILE] All 100 ATM records saved to '" << filename << "'\n";
 }
-void saveToJSON(vector<ATM> &atms, vector<int> &route) {
+
+// Save JSON output for visualization
+void saveToJSON(vector<ATM>& atms, vector<int>& route) {
     ofstream file("output.json");
 
     file << "{\n";
     file << "  \"atms\": [\n";
 
-    for (int i = 0; i < atms.size(); i++) {
+    for (int i = 0; i < (int)atms.size(); i++) {
         file << "    {";
-        file << "\"id\": " << atms[i].id << ", ";
-        file << "\"name\": \"" << atms[i].name << "\", ";
-        file << "\"location\": \"" << atms[i].location << "\", ";
-        file << "\"x\": " << atms[i].x << ", ";
-        file << "\"y\": " << atms[i].y << ", ";
-        file << "\"cashLevel\": " << atms[i].cashLevel << ", ";
-        file << "\"urgency\": " << atms[i].urgencyScore << ", ";
-        file << "\"days\": " << atms[i].daysSinceRefill;
+        file << "\"id\": "         << atms[i].id           << ", ";
+        file << "\"name\": \""     << atms[i].name         << "\", ";
+        file << "\"location\": \"" << atms[i].location     << "\", ";
+        file << "\"x\": "          << atms[i].x            << ", ";
+        file << "\"y\": "          << atms[i].y            << ", ";
+        file << "\"cashLevel\": "  << atms[i].cashLevel    << ", ";
+        file << "\"timeToEmpty\": "<< (atms[i].timeToEmpty >= 1e9 ? 9999.99 : atms[i].timeToEmpty) << ", ";
+        file << "\"days\": "       << atms[i].daysSinceRefill;
         file << "}";
-
-        if (i != atms.size() - 1) file << ",";
+        if (i != (int)atms.size() - 1) file << ",";
         file << "\n";
     }
 
     file << "  ],\n";
-
     file << "  \"route\": [";
-    for (int i = 0; i < route.size(); i++) {
+    for (int i = 0; i < (int)route.size(); i++) {
         file << route[i];
-        if (i != route.size() - 1) file << ",";
+        if (i != (int)route.size() - 1) file << ",";
     }
     file << "]\n";
-
     file << "}\n";
 
     file.close();
 }
 
-// ============================================================
-//  MAIN
-// ============================================================
 int main() {
-    // ── Seed the RNG for reproducibility ─────────────────────
     srand(42);
 
-    // ── PART 1: Generate 100 ATMs ─────────────────────────────
+    // Generate 100 ATMs with random data
     vector<ATM> atms;
     atms.reserve(100);
 
     for (int i = 0; i < 100; i++) {
         ATM a;
-        a.id                 = i + 1;
-        a.name               = "ATM_" + string(3 - to_string(i + 1).size(), '0') + to_string(i + 1);
-        a.location           = LOCATIONS[i];
-        a.x                  = randDouble(0.0, 100.0);
-        a.y                  = randDouble(0.0, 100.0);
-        a.cashLevel          = randDouble(0.0, 100.0);
-        a.dailyWithdrawalRate= randDouble(500.0, 5000.0);
-        a.daysSinceRefill    = randInt(1, 15);
-        a.urgencyScore       = 0.0;   // will be computed next
-        a.truckAssigned      = -1;
+        a.id                  = i + 1;
+        a.name                = "ATM_" + string(3 - to_string(i + 1).size(), '0') + to_string(i + 1);
+        a.location            = LOCATIONS[i];
+        a.x                   = randDouble(0.0, 100.0);
+        a.y                   = randDouble(0.0, 100.0);
+        a.cashLevel           = randDouble(0.0, 100.0);
+        a.dailyWithdrawalRate = randDouble(500.0, 5000.0);
+        a.daysSinceRefill     = randInt(1, 15);
+        a.timeToEmpty         = 0.0;
+        a.truckAssigned       = -1;
         atms.push_back(a);
     }
 
-    // ── Calculate urgency score for every ATM ─────────────────
+    // Compute timeToEmpty for every ATM
     for (ATM& a : atms) {
-        a.urgencyScore = calculateUrgency(a);
+        a.timeToEmpty = calculateTimeToEmpty(a);
     }
 
-    // ── PART 2: Build Max-Heap using STL priority_queue ───────
-    // priority_queue<T, Container, Comparator>
-    // Max-heap: the element with the HIGHEST urgencyScore is at the top.
-    priority_queue<ATM, vector<ATM>, CompareUrgency> pq;
-
+    // Build Min-Heap (ATM with smallest timeToEmpty = highest priority)
+    priority_queue<ATM, vector<ATM>, CompareTime> pq;
     for (const ATM& a : atms) {
-        pq.push(a);   // Each push: O(log n)
+        pq.push(a);
     }
-    // Total heap construction: O(n log n)
 
-    // ── Pop all ATMs in descending urgency order ───────────────
+    // Extract all ATMs in ascending timeToEmpty order (most urgent first)
     vector<ATM> sorted;
     sorted.reserve(100);
     while (!pq.empty()) {
         sorted.push_back(pq.top());
-        pq.pop();   // Each pop: O(log n)
+        pq.pop();
     }
-    // Total: O(n log n) for n pops
 
-    // ── PART 3: Print Formatted Table (Top 20) ────────────────
+    // Print formatted table header
     cout << "\n";
-    cout << "╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗\n";
-    cout << "║           ATM CASH REPLENISHMENT OPTIMIZER — TOP 20 MOST URGENT ATMs                               ║\n";
-    cout << "╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝\n\n";
+    cout << "╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════╗\n";
+    cout << "║        ATM CASH REPLENISHMENT OPTIMIZER — TOP 20 MOST URGENT ATMs (Time-to-Empty Model)                    ║\n";
+    cout << "╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════╝\n\n";
 
-    // Table header
     cout << left
          << setw(5)  << "Rank"
          << setw(9)  << "ATM ID"
@@ -256,18 +218,16 @@ int main() {
          << setw(13) << "Cash Level%"
          << setw(13) << "Daily Rate"
          << setw(19) << "Days Since Refill"
-         << setw(15) << "Urgency Score"
+         << setw(16) << "Time Left (hrs)"
          << setw(10) << "Status"
          << "\n";
-    cout << string(105, '-') << "\n";
+    cout << string(111, '-') << "\n";
 
     int criticalCount = 0, highCount = 0;
-    double totalUrgency = 0.0;
 
-    // Count across ALL 100 ATMs for aggregate stats
+    // Count across all 100 ATMs for aggregate stats
     for (const ATM& a : sorted) {
-        totalUrgency += a.urgencyScore;
-        string s = getStatus(a.urgencyScore);
+        string s = getStatus(a.timeToEmpty);
         if (s.find("CRITICAL") != string::npos) criticalCount++;
         else if (s.find("HIGH") != string::npos) highCount++;
     }
@@ -275,7 +235,8 @@ int main() {
     // Print top 20 rows
     for (int rank = 1; rank <= 20; rank++) {
         const ATM& a = sorted[rank - 1];
-        string status = getStatus(a.urgencyScore);
+        string status = getStatus(a.timeToEmpty);
+        double display_tte = (a.timeToEmpty >= 1e9) ? 9999.99 : a.timeToEmpty;
 
         cout << left
              << setw(5)  << rank
@@ -284,28 +245,27 @@ int main() {
              << setw(13) << fixed << setprecision(1) << a.cashLevel
              << setw(13) << fixed << setprecision(0) << a.dailyWithdrawalRate
              << setw(19) << a.daysSinceRefill
-             << setw(15) << fixed << setprecision(2) << a.urgencyScore
+             << setw(16) << fixed << setprecision(2) << display_tte
              << setw(10) << status
              << "\n";
     }
-vector<int> route;
-for (auto &atm : atms) route.push_back(atm.id); //dummy route (just ATM IDs in order of urgency)
-    // ── Summary Statistics ────────────────────────────────────
-    cout << "\n" << string(105, '=') << "\n";
+
+    vector<int> route;
+    for (auto& atm : atms) route.push_back(atm.id);
+
+    // Summary statistics
+    cout << "\n" << string(111, '=') << "\n";
     cout << "  SUMMARY (across all 100 ATMs)\n";
-    cout << string(105, '-') << "\n";
-    cout << "  Total CRITICAL ATMs  : " << criticalCount << "\n";
-    cout << "  Total HIGH ATMs      : " << highCount     << "\n";
-    cout << "  Average Urgency Score: " << fixed << setprecision(2)
-         << (totalUrgency / 100.0) << "\n";
+    cout << string(111, '-') << "\n";
+    cout << "  Total CRITICAL ATMs (≤ 2 hrs)  : " << criticalCount << "\n";
+    cout << "  Total HIGH ATMs    (≤ 6 hrs)   : " << highCount     << "\n";
     cout << "\n";
     cout << "  Time Complexity Note:\n";
-    cout << "    • Inserting n = 100 ATMs into max-heap : O(n log n)\n";
+    cout << "    • Inserting n = 100 ATMs into min-heap : O(n log n)\n";
     cout << "    • Extracting all n elements in order   : O(n log n)\n";
     cout << "    • Overall                              : O(n log n)\n";
-    cout << string(105, '=') << "\n";
+    cout << string(111, '=') << "\n";
 
-    // ── Save all 100 ATMs to file ─────────────────────────────
     saveToFile(sorted, "atm_data.txt");
     saveToJSON(atms, route);
     return 0;

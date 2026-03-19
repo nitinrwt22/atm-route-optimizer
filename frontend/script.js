@@ -1,64 +1,40 @@
-let data = null;
+// ATM Cash Replenishment Optimizer - Frontend Script
+// Add interactive functionality here
 
-async function loadData() {
-    // temporary sample data (later from C++)
- 
-    const res = await fetch('../output.json');
-    data = await res.json();
-    drawATMs();
-}
-
-
-function drawATMs() {
-    const canvas = document.getElementById("map");
-    const ctx = canvas.getContext("2d");
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    data.atms.forEach(atm => {
-
-        // ✅ SCALE coordinates
-        let x = (atm.x / 100) * canvas.width;
-        let y = (atm.y / 100) * canvas.height;
-
-        ctx.beginPath();
-        ctx.arc(x, y, 6, 0, 2 * Math.PI);
-
-        if (atm.urgency > 70)
-            ctx.fillStyle = "red";
-        else if (atm.urgency > 40)
-            ctx.fillStyle = "orange";
-        else
-            ctx.fillStyle = "green";
-
-        ctx.fill();
-
-        // save scaled position
-        atm.drawX = x;
-        atm.drawY = y;
-    });
-
-}
-
-function runAlgorithm() {
-    drawATMs();
-    drawRoute();
-}
-
-function drawRoute() {
-    const canvas = document.getElementById("map");
-    const ctx = canvas.getContext("2d");
-
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 2;
-
-    for (let i = 0; i < data.route.length - 1; i++) {
-        const a = data.atms.find(x => x.id === data.route[i]);
-        const b = data.atms.find(x => x.id === data.route[i+1]);
-
-        ctx.beginPath();
-        ctx.moveTo(a.drawX, a.drawY);
-        ctx.lineTo(b.drawX, b.drawY);
-        ctx.stroke();
+// Example: Update simulation clock
+function updateClock() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const clockEl = document.getElementById('simulation-clock');
+    if (clockEl) {
+        clockEl.textContent = `${hours}:${minutes}:${seconds}`;
     }
+}
+
+// Update clock every second
+setInterval(updateClock, 1000);
+updateClock();
+
+// Sidebar Toggle Logic
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const desktopSidebar = document.getElementById('desktop-sidebar');
+const layoutWrapper = document.getElementById('layout-wrapper');
+
+if (sidebarToggle && desktopSidebar && layoutWrapper) {
+    sidebarToggle.addEventListener('click', () => {
+        // Toggle the sidebar off-screen
+        desktopSidebar.classList.toggle('-translate-x-full');
+        // Remove the padding on the layout wrapper so main content expands
+        layoutWrapper.classList.toggle('md:pl-64');
+    });
+}
+
+// Theme Toggle Logic
+const themeToggle = document.getElementById('theme-toggle');
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+    });
 }

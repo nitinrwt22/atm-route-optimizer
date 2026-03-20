@@ -6,15 +6,13 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>ATM Cash Replenishment Optimizer</title>
+    <meta name="description" content="Real-time ATM monitoring and cash replenishment optimizer dashboard powered by predictive time-to-empty modeling." />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
     <script id="tailwind-config">
         tailwind.config = {
@@ -85,7 +83,15 @@
 
 <body
     class="font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container min-h-screen pb-24 md:pb-0">
-    <!-- TopAppBar -->
+
+    <!-- ─── Load Error Banner ──────────────────────────────────────────────── -->
+    <div id="load-error-banner"
+         class="hidden fixed top-0 left-0 right-0 z-[200] bg-red-900/90 backdrop-blur text-white px-6 py-3 text-sm items-center justify-between gap-4">
+        <span>⚠️ <strong>Could not load output.json.</strong> Run the C++ backend first, then serve via a local server (e.g. <code>python3 -m http.server 8080</code> inside the <code>frontend/</code> folder, or use VS Code Live Server).</span>
+        <button onclick="document.getElementById('load-error-banner').style.display='none'" class="text-red-200 hover:text-white font-bold">✕</button>
+    </div>
+
+    <!-- ─── TopAppBar ─────────────────────────────────────────────────────── -->
     <header
         class="fixed top-0 left-0 right-0 z-50 bg-surface bg-opacity-80 dark:bg-surface bg-opacity-80 backdrop-blur-xl flex justify-between items-center w-full px-6 py-4 shadow-[0_0_15px_rgba(0,242,255,0.1)]">
         <div class="flex items-center gap-4">
@@ -104,324 +110,306 @@
         <div class="hidden md:flex items-center gap-6">
             <div class="text-right">
                 <p class="text-[10px] uppercase text-on-surface-variant">Simulation Clock</p>
-                <p id="simulation-clock" class="font-headline text-primary-fixed-dim font-bold">14:42:05</p>
+                <p id="simulation-clock" class="font-headline text-primary-fixed-dim font-bold">00:00:00</p>
             </div>
             <button id="theme-toggle" class="p-2 rounded-xl text-on-surface hover:text-primary-container hover:bg-surface-container-high transition-colors flex items-center justify-center">
                 <span class="material-symbols-outlined dark:hidden" data-icon="light_mode">light_mode</span>
                 <span class="material-symbols-outlined hidden dark:block" data-icon="dark_mode">dark_mode</span>
             </button>
-            <button
+            <button id="run-optimization-btn"
                 class="bg-gradient-to-r from-primary-fixed-dim to-primary-container text-on-primary-fixed px-6 py-2 rounded-xl font-bold tracking-tight hover:shadow-[0_0_20px_rgba(0,242,255,0.3)] transition-all active:scale-95 duration-200">
                 Run Optimization
             </button>
         </div>
     </header>
+
     <div id="layout-wrapper" class="md:pl-64 transition-[padding] duration-300">
         <main class="pt-24 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
-            <!-- Hero Section: Interactive Map -->
-        <section
-            class="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden bg-surface-container-low border border-outline-variant border-opacity-10 shadow-2xl">
-            <div class="absolute inset-0 z-0 opacity-40 grayscale contrast-125 brightness-50"
-                data-alt="Futuristic dark city map with neon highlights" data-location="New York City"
-                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDTj6ttQsla6UFZNnS4pf-1JX3sA5etrnrvHBUPWOdbG9VIyGNRcA0-pxc1u6s3j04gwZQDf9YvYsHvwXK5GgstbI1JDzPANBpc-UBqkmQokpNmcgzpFN1kYHRugXE__8HCPuf5loKrsFmRGLJjD9tysq9VF4KYJmiZ6JT5YOHHLBbhHRHvfY6u8VtR8j7dhUSnbx8C41VBNWugl3JKrNcDyYBU-hV9oAaHvXG8fLYaI-KxWeJC5aJkRCdRB4DS_Uk54cDCTCkPXI4'); background-size: cover;">
-            </div>
-            <!-- Map Overlay UI -->
-            <div class="absolute inset-0 z-10 p-6 flex flex-col justify-between pointer-events-none">
-                <div class="flex justify-between items-start">
-                    <div class="glass-panel p-3 rounded-xl pointer-events-auto">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
-                            <span class="text-[10px] uppercase font-bold tracking-widest text-primary-container">System
-                                Live</span>
-                        </div>
-                        <p class="text-xs text-on-surface-variant">Monitoring 100 Endpoints</p>
-                    </div>
-                    <button
-                        class="glass-panel p-3 rounded-xl pointer-events-auto hover:bg-surface-container-highest transition-colors">
-                        <span class="material-symbols-outlined text-on-surface" data-icon="refresh">refresh</span>
-                    </button>
+
+            <!-- ─── Hero Section: Interactive Map ─────────────────────────── -->
+            <section
+                class="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden bg-surface-container-low border border-outline-variant border-opacity-10 shadow-2xl">
+
+                <!-- Background Image -->
+                <div class="absolute inset-0 z-0 opacity-40 grayscale contrast-125 brightness-50"
+                    style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDTj6ttQsla6UFZNnS4pf-1JX3sA5etrnrvHBUPWOdbG9VIyGNRcA0-pxc1u6s3j04gwZQDf9YvYsHvwXK5GgstbI1JDzPANBpc-UBqkmQokpNmcgzpFN1kYHRugXE__8HCPuf5loKrsFmRGLJjD9tysq9VF4KYJmiZ6JT5YOHHLBbhHRHvfY6u8VtR8j7dhUSnbx8C41VBNWugl3JKrNcDyYBU-hV9oAaHvXG8fLYaI-KxWeJC5aJkRCdRB4DS_Uk54cDCTCkPXI4'); background-size: cover;">
                 </div>
-                <!-- ATM Markers (Simulated Positions) -->
-                <div class="relative w-full h-full pointer-events-none">
-                    <!-- Critical Marker -->
-                    <div class="absolute top-[20%] left-[30%] pointer-events-auto group">
-                        <div class="w-4 h-4 rounded-full bg-on-tertiary-container pulse-glow-red cursor-pointer"></div>
-                        <div
-                            class="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container-highest p-2 rounded text-[10px] whitespace-nowrap z-20">
-                            <p class="font-bold text-on-tertiary-container">ATM-402 (CRITICAL)</p>
-                            <p>$1,200 remaining</p>
-                        </div>
-                    </div>
-                    <!-- Warning Marker -->
-                    <div class="absolute top-[60%] left-[55%] pointer-events-auto group">
-                        <div
-                            class="w-3 h-3 rounded-full bg-yellow-400 shadow-[0_0_10px_#facc15] cursor-pointer">
-                        </div>
-                        <div
-                            class="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container-highest p-2 rounded text-[10px] whitespace-nowrap z-20">
-                            <p class="font-bold text-yellow-400">ATM-119 (WARNING)</p>
-                            <p>$8,450 remaining</p>
-                        </div>
-                    </div>
-                    <!-- Safe Marker -->
-                    <div class="absolute top-[40%] left-[70%] pointer-events-auto group">
-                        <div class="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_5px_#4ade80] cursor-pointer">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- Bento Grid: Analytics & Insights -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- System Summary Card -->
-            <div
-                class="md:col-span-1 p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl flex flex-col justify-between">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">System
-                        Summary</h3>
-                    <span class="material-symbols-outlined text-primary-container text-sm" data-icon="dns">dns</span>
-                </div>
-                <div class="space-y-4">
-                    <div>
-                        <p class="text-display-lg font-headline font-bold text-primary-fixed-dim leading-none">100</p>
-                        <p class="text-[10px] uppercase font-bold text-on-surface-variant text-opacity-60 tracking-tighter">Total
-                            Active ATMs</p>
-                    </div>
-                    <div class="flex gap-4">
-                        <div
-                            class="flex-1 p-3 rounded-xl bg-on-tertiary-container bg-opacity-10 border border-on-tertiary-container border-opacity-20">
-                            <p class="text-on-tertiary-container text-xl font-bold">12</p>
-                            <p class="text-[9px] uppercase font-bold text-on-tertiary-container text-opacity-80">Critical</p>
-                        </div>
-                        <div class="flex-1 p-3 rounded-xl bg-primary-container bg-opacity-5 border border-primary-container border-opacity-10">
-                            <p class="text-primary-container text-xl font-bold">8.5h</p>
-                            <p class="text-[9px] uppercase font-bold text-primary-container text-opacity-80">Avg. Time Left</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Top Urgent ATMs -->
-            <div
-                class="md:col-span-1 p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Top Urgent
-                        ATMs</h3>
-                    <span class="material-symbols-outlined text-secondary-container text-sm"
-                        data-icon="priority_high">priority_high</span>
-                </div>
-                <div class="space-y-3">
-                    <div
-                        class="flex items-center justify-between p-3 rounded-xl bg-surface-container-high bg-opacity-50 hover:bg-surface-container-high transition-colors group cursor-pointer">
-                        <div class="flex items-center gap-3">
-                            <span class="text-xs font-bold text-on-tertiary-container">01</span>
-                            <div>
-                                <p class="text-xs font-bold text-on-surface uppercase tracking-tight">ATM-722-DX</p>
-                                <p class="text-[10px] text-on-surface-variant">Grand Central Station</p>
+
+                <!-- Dynamic Canvas for ATM Markers (z-10, covers the whole map) -->
+                <canvas id="atm-map-canvas" class="atm-map-canvas"></canvas>
+
+                <!-- Map Overlay UI (z-20) -->
+                <div class="absolute inset-0 z-20 p-6 flex flex-col justify-between pointer-events-none">
+                    <div class="flex justify-between items-start">
+                        <div class="glass-panel p-3 rounded-xl pointer-events-auto">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+                                <span class="text-[10px] uppercase font-bold tracking-widest text-primary-container">System Live</span>
                             </div>
+                            <p class="text-xs text-on-surface-variant">Monitoring <span id="map-stat-total">100</span> Endpoints</p>
                         </div>
-                        <span class="text-xs font-bold text-on-tertiary-container">1.2 hrs</span>
+                        <button onclick="loadATMData ? loadATMData() : null"
+                            class="glass-panel p-3 rounded-xl pointer-events-auto hover:bg-surface-container-highest transition-colors">
+                            <span class="material-symbols-outlined text-on-surface" data-icon="refresh">refresh</span>
+                        </button>
                     </div>
-                    <div
-                        class="flex items-center justify-between p-3 rounded-xl bg-surface-container-high bg-opacity-50 hover:bg-surface-container-high transition-colors group cursor-pointer">
-                        <div class="flex items-center gap-3">
-                            <span class="text-xs font-bold text-on-tertiary-container">02</span>
-                            <div>
-                                <p class="text-xs font-bold text-on-surface uppercase tracking-tight">ATM-104-BB</p>
-                                <p class="text-[10px] text-on-surface-variant">Wall St. Subway</p>
-                            </div>
-                        </div>
-                        <span class="text-xs font-bold text-on-tertiary-container">2.8 hrs</span>
-                    </div>
-                    <div
-                        class="flex items-center justify-between p-3 rounded-xl bg-surface-container-high bg-opacity-50 hover:bg-surface-container-high transition-colors group cursor-pointer">
-                        <div class="flex items-center gap-3">
-                            <span class="text-xs font-bold text-yellow-400">03</span>
-                            <div>
-                                <p class="text-xs font-bold text-on-surface uppercase tracking-tight">ATM-005-NY</p>
-                                <p class="text-[10px] text-on-surface-variant">Time Square South</p>
-                            </div>
-                        </div>
-                        <span class="text-xs font-bold text-yellow-400">4.5 hrs</span>
+
+                    <!-- Map Legend -->
+                    <div class="glass-panel p-3 rounded-xl pointer-events-auto self-end flex flex-col gap-1.5">
+                        <p class="text-[9px] uppercase font-bold text-on-surface-variant tracking-widest mb-1">Legend</p>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_6px_#EF4444]"></span><span class="text-[10px] text-on-surface-variant">Critical</span></div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-400 shadow-[0_0_6px_#FACC15]"></span><span class="text-[10px] text-on-surface-variant">High</span></div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-400 shadow-[0_0_6px_#60A5FA]"></span><span class="text-[10px] text-on-surface-variant">Medium</span></div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-400 shadow-[0_0_6px_#4ADE80]"></span><span class="text-[10px] text-on-surface-variant">Low</span></div>
                     </div>
                 </div>
-            </div>
-            <!-- Urgency Distribution -->
-            <div
-                class="md:col-span-1 p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Urgency
-                        Distribution</h3>
-                    <span class="material-symbols-outlined text-on-surface-variant text-sm"
-                        data-icon="pie_chart">pie_chart</span>
-                </div>
-                <div class="flex items-center justify-center gap-6 h-32">
-                    <div class="relative w-24 h-24">
-                        <svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
-                            <circle cx="18" cy="18" fill="none" r="16" stroke="#1c1b1b" stroke-width="4"></circle>
-                            <circle cx="18" cy="18" fill="none" r="16" stroke="#C20014" stroke-dasharray="12, 100"
-                                stroke-linecap="round" stroke-width="4"></circle>
-                            <circle cx="18" cy="18" fill="none" r="16" stroke="#facc15" stroke-dasharray="25, 100"
-                                stroke-dashoffset="-12" stroke-linecap="round" stroke-width="4"></circle>
-                            <circle cx="18" cy="18" fill="none" r="16" stroke="#4ade80" stroke-dasharray="63, 100"
-                                stroke-dashoffset="-37" stroke-linecap="round" stroke-width="4"></circle>
-                        </svg>
+            </section>
+
+            <!-- ─── Bento Grid: Analytics & Insights ──────────────────────── -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                <!-- System Summary Card -->
+                <div
+                    class="md:col-span-1 p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl flex flex-col justify-between">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">System Summary</h3>
+                        <span class="material-symbols-outlined text-primary-container text-sm" data-icon="dns">dns</span>
                     </div>
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-on-tertiary-container"></span>
-                            <span class="text-[10px] uppercase font-bold text-on-surface-variant">12% Critical</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
-                            <span class="text-[10px] uppercase font-bold text-on-surface-variant">25% High</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-green-400"></span>
-                            <span class="text-[10px] uppercase font-bold text-on-surface-variant">63% Stable</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Wide Panel: Performance Insights -->
-            <div
-                class="md:col-span-3 p-8 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-2xl relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-primary-container bg-opacity-5 blur-[100px] pointer-events-none">
-                </div>
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <div>
-                        <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant mb-1">
-                            Performance Insights</h3>
-                        <p class="text-2xl font-bold font-headline">Predictive Optimization Flow</p>
-                    </div>
-                    <div class="flex gap-8">
+                    <div class="space-y-4">
                         <div>
-                            <p class="text-[10px] uppercase text-on-surface-variant font-bold">Outages Prevented</p>
-                            <p class="text-xl font-bold text-primary-container">+142</p>
+                            <p id="stat-total" class="text-display-lg font-headline font-bold text-primary-fixed-dim leading-none">—</p>
+                            <p class="text-[10px] uppercase font-bold text-on-surface-variant text-opacity-60 tracking-tighter">Total Active ATMs</p>
                         </div>
-                        <div>
-                            <p class="text-[10px] uppercase text-on-surface-variant font-bold">Efficiency gain</p>
-                            <p class="text-xl font-bold text-secondary-container">22.4%</p>
+                        <div class="flex gap-4">
+                            <div class="flex-1 p-3 rounded-xl bg-red-500 bg-opacity-10 border border-red-500 border-opacity-20">
+                                <p id="stat-critical" class="text-red-400 text-xl font-bold">—</p>
+                                <p class="text-[9px] uppercase font-bold text-red-400 text-opacity-80">Critical</p>
+                            </div>
+                            <div class="flex-1 p-3 rounded-xl bg-primary-container bg-opacity-5 border border-primary-container border-opacity-10">
+                                <p id="stat-avg-time" class="text-primary-container text-xl font-bold">—</p>
+                                <p class="text-[9px] uppercase font-bold text-primary-container text-opacity-80">Avg. Time Left</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- Simple Line Chart Representation -->
-                <div class="relative h-32 w-full flex items-end gap-1 px-2">
-                    <div
-                        class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[40%]">
+
+                <!-- Top Urgent ATMs Panel -->
+                <div
+                    class="md:col-span-1 p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Top Urgent ATMs</h3>
+                        <span class="material-symbols-outlined text-secondary-container text-sm"
+                            data-icon="priority_high">priority_high</span>
                     </div>
-                    <div
-                        class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[35%]">
+                    <!-- Scrollable list of top-10 populated by JS -->
+                    <div id="urgent-list" class="space-y-2 max-h-72 overflow-y-auto pr-1 scrollbar-hide">
+                        <!-- Loading placeholder -->
+                        <div class="flex items-center justify-center h-32 text-on-surface-variant text-sm opacity-50">
+                            <span class="material-symbols-outlined animate-spin mr-2">progress_activity</span> Loading…
+                        </div>
                     </div>
-                    <div
-                        class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[55%]">
+                </div>
+
+                <!-- Urgency Distribution Donut -->
+                <div
+                    class="md:col-span-1 p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Urgency Distribution</h3>
+                        <span class="material-symbols-outlined text-on-surface-variant text-sm"
+                            data-icon="pie_chart">pie_chart</span>
                     </div>
-                    <div
-                        class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[70%]">
+                    <div class="flex items-center justify-center gap-6 h-32">
+                        <div class="relative w-24 h-24">
+                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                <!-- Background track -->
+                                <circle cx="18" cy="18" fill="none" r="16" stroke="#1c1b1b" stroke-width="4"></circle>
+                                <!-- Critical (red) -->
+                                <circle id="arc-critical" cx="18" cy="18" fill="none" r="16"
+                                    stroke="#EF4444" stroke-dasharray="0, 100" stroke-dashoffset="0"
+                                    stroke-linecap="round" stroke-width="4"></circle>
+                                <!-- High (yellow) -->
+                                <circle id="arc-high" cx="18" cy="18" fill="none" r="16"
+                                    stroke="#FACC15" stroke-dasharray="0, 100" stroke-dashoffset="0"
+                                    stroke-linecap="round" stroke-width="4"></circle>
+                                <!-- Medium (blue) -->
+                                <circle id="arc-medium" cx="18" cy="18" fill="none" r="16"
+                                    stroke="#60A5FA" stroke-dasharray="0, 100" stroke-dashoffset="0"
+                                    stroke-linecap="round" stroke-width="4"></circle>
+                                <!-- Low (green) -->
+                                <circle id="arc-low" cx="18" cy="18" fill="none" r="16"
+                                    stroke="#4ADE80" stroke-dasharray="0, 100" stroke-dashoffset="0"
+                                    stroke-linecap="round" stroke-width="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                <span id="legend-critical" class="text-[10px] uppercase font-bold text-on-surface-variant">—% Critical</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+                                <span id="legend-high" class="text-[10px] uppercase font-bold text-on-surface-variant">—% High</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                                <span id="legend-medium" class="text-[10px] uppercase font-bold text-on-surface-variant">—% Medium</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-green-400"></span>
+                                <span id="legend-low" class="text-[10px] uppercase font-bold text-on-surface-variant">—% Low</span>
+                            </div>
+                        </div>
                     </div>
-                    <div
-                        class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[65%]">
+                </div>
+
+                <!-- Wide Panel: Performance Insights -->
+                <div
+                    class="md:col-span-3 p-8 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-primary-container bg-opacity-5 blur-[100px] pointer-events-none">
                     </div>
-                    <div
-                        class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[85%]">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                        <div>
+                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant mb-1">
+                                Performance Insights</h3>
+                            <p class="text-2xl font-bold font-headline">Predictive Optimization Flow</p>
+                        </div>
+                        <div class="flex gap-8">
+                            <div>
+                                <p class="text-[10px] uppercase text-on-surface-variant font-bold">Outages Prevented</p>
+                                <p class="text-xl font-bold text-primary-container">+142</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] uppercase text-on-surface-variant font-bold">Efficiency gain</p>
+                                <p class="text-xl font-bold text-secondary-container">22.4%</p>
+                            </div>
+                        </div>
                     </div>
-                    <div
-                        class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[95%]">
-                    </div>
-                    <div
-                        class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[80%]">
-                    </div>
-                    <div
-                        class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[90%]">
-                    </div>
-                    <div
-                        class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[100%]">
-                    </div>
-                    <div
-                        class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[85%]">
-                    </div>
-                    <div
-                        class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[75%]">
-                    </div>
-                    <!-- Legend -->
-                    <div
-                        class="absolute bottom-[-24px] left-0 w-full flex justify-between text-[8px] uppercase font-bold text-on-surface-variant text-opacity-40 tracking-widest">
-                        <span>08:00 AM</span>
-                        <span>12:00 PM</span>
-                        <span>04:00 PM</span>
-                        <span>08:00 PM</span>
+                    <!-- Simple Bar Chart -->
+                    <div class="relative h-32 w-full flex items-end gap-1 px-2">
+                        <div class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[40%]"></div>
+                        <div class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[35%]"></div>
+                        <div class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[55%]"></div>
+                        <div class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[70%]"></div>
+                        <div class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[65%]"></div>
+                        <div class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[85%]"></div>
+                        <div class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[95%]"></div>
+                        <div class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[80%]"></div>
+                        <div class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[90%]"></div>
+                        <div class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[100%]"></div>
+                        <div class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[85%]"></div>
+                        <div class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[75%]"></div>
+                        <div class="absolute bottom-[-24px] left-0 w-full flex justify-between text-[8px] uppercase font-bold text-on-surface-variant text-opacity-40 tracking-widest">
+                            <span>08:00 AM</span><span>12:00 PM</span><span>04:00 PM</span><span>08:00 PM</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
         </main>
     </div>
-    <!-- Navigation Components -->
-    <!-- NavigationDrawer (Web Only) -->
+
+    <!-- ─── Navigation Drawer (Desktop) ──────────────────────────────────── -->
     <aside id="desktop-sidebar"
         class="hidden md:flex fixed left-0 top-0 h-full z-40 flex-col bg-surface w-64 shadow-[5px_0_25px_rgba(0,0,0,0.5)] pt-24 transition-transform duration-300">
         <div class="px-6 mb-8">
-            <h2 class="font-['Inter'] text-label-sm uppercase tracking-widest text-primary-container text-opacity-60 font-black">Mission
-                Control</h2>
+            <h2 class="font-['Inter'] text-label-sm uppercase tracking-widest text-primary-container text-opacity-60 font-black">Mission Control</h2>
         </div>
         <nav class="flex-1">
-            <a class="group flex items-center gap-4 px-6 py-4 bg-primary-container bg-opacity-10 text-primary-container border-r-2 border-primary-container shadow-[inset_-10px_0_15px_rgba(0,242,255,0.05)]"
-                href="#">
-                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1"
-                    data-icon="dashboard">dashboard</span>
+            <a class="group flex items-center gap-4 px-6 py-4 bg-primary-container bg-opacity-10 text-primary-container border-r-2 border-primary-container shadow-[inset_-10px_0_15px_rgba(0,242,255,0.05)]" href="#">
+                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1" data-icon="dashboard">dashboard</span>
                 <span class="font-['Inter'] text-label-sm uppercase tracking-widest">Dashboard</span>
             </a>
-            <a class="group flex items-center gap-4 px-6 py-4 text-on-surface text-opacity-40 hover:text-on-surface hover:bg-surface-container-low transition-all"
-                href="#">
-                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1"
-                    data-icon="atm">atm</span>
+            <a class="group flex items-center gap-4 px-6 py-4 text-on-surface text-opacity-40 hover:text-on-surface hover:bg-surface-container-low transition-all" href="#">
+                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1" data-icon="atm">atm</span>
                 <span class="font-['Inter'] text-label-sm uppercase tracking-widest">ATMs</span>
             </a>
-            <a class="group flex items-center gap-4 px-6 py-4 text-on-surface text-opacity-40 hover:text-on-surface hover:bg-surface-container-low transition-all"
-                href="#">
-                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1"
-                    data-icon="monitoring">monitoring</span>
+            <a class="group flex items-center gap-4 px-6 py-4 text-on-surface text-opacity-40 hover:text-on-surface hover:bg-surface-container-low transition-all" href="#">
+                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1" data-icon="monitoring">monitoring</span>
                 <span class="font-['Inter'] text-label-sm uppercase tracking-widest">Analytics</span>
             </a>
-            <a class="group flex items-center gap-4 px-6 py-4 text-on-surface text-opacity-40 hover:text-on-surface hover:bg-surface-container-low transition-all"
-                href="#">
-                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1"
-                    data-icon="settings">settings</span>
+            <a class="group flex items-center gap-4 px-6 py-4 text-on-surface text-opacity-40 hover:text-on-surface hover:bg-surface-container-low transition-all" href="#">
+                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1" data-icon="settings">settings</span>
                 <span class="font-['Inter'] text-label-sm uppercase tracking-widest">Settings</span>
             </a>
         </nav>
     </aside>
-    <!-- BottomNavBar (Mobile Only) -->
+
+    <!-- ─── Bottom Nav Bar (Mobile) ──────────────────────────────────────── -->
     <nav
         class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 md:hidden bg-surface bg-opacity-90 backdrop-blur-2xl border-t border-primary-container border-opacity-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] rounded-t-2xl">
-        <a class="flex flex-col items-center justify-center text-primary-container bg-primary-container bg-opacity-5 rounded-xl py-1 px-3 shadow-[0_0_10px_rgba(0,242,255,0.2)] active:scale-90 transition-transform"
-            href="#">
+        <a class="flex flex-col items-center justify-center text-primary-container bg-primary-container bg-opacity-5 rounded-xl py-1 px-3 shadow-[0_0_10px_rgba(0,242,255,0.2)] active:scale-90 transition-transform" href="#">
             <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
             <span class="font-['Inter'] text-[10px] font-medium tracking-tight">Dashboard</span>
         </a>
-        <a class="flex flex-col items-center justify-center text-on-surface text-opacity-50 hover:text-primary-container active:scale-90 transition-transform"
-            href="#">
+        <a class="flex flex-col items-center justify-center text-on-surface text-opacity-50 hover:text-primary-container active:scale-90 transition-transform" href="#">
             <span class="material-symbols-outlined" data-icon="atm">atm</span>
             <span class="font-['Inter'] text-[10px] font-medium tracking-tight">ATMs</span>
         </a>
-        <a class="flex flex-col items-center justify-center text-on-surface text-opacity-50 hover:text-primary-container active:scale-90 transition-transform"
-            href="#">
+        <a class="flex flex-col items-center justify-center text-on-surface text-opacity-50 hover:text-primary-container active:scale-90 transition-transform" href="#">
             <span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
             <span class="font-['Inter'] text-[10px] font-medium tracking-tight">Analytics</span>
         </a>
-        <a class="flex flex-col items-center justify-center text-on-surface text-opacity-50 hover:text-primary-container active:scale-90 transition-transform"
-            href="#">
+        <a class="flex flex-col items-center justify-center text-on-surface text-opacity-50 hover:text-primary-container active:scale-90 transition-transform" href="#">
             <span class="material-symbols-outlined" data-icon="settings">settings</span>
             <span class="font-['Inter'] text-[10px] font-medium tracking-tight">Settings</span>
         </a>
     </nav>
-    <!-- Contextual FAB (Mobile Primary Action) -->
+
+    <!-- ─── Contextual FAB (Mobile) ──────────────────────────────────────── -->
     <div class="fixed bottom-24 right-6 md:hidden z-40">
         <button
             class="w-14 h-14 rounded-full bg-gradient-to-br from-primary-fixed-dim to-primary-container text-on-primary-fixed shadow-[0_0_30px_rgba(0,242,255,0.4)] flex items-center justify-center active:scale-90 transition-transform">
-            <span class="material-symbols-outlined text-2xl" data-icon="bolt" data-weight="fill"
+            <span class="material-symbols-outlined text-2xl" data-icon="bolt"
                 style="font-variation-settings: 'FILL' 1;">bolt</span>
         </button>
     </div>
+
+    <!-- ─── ATM Detail Popup Modal ────────────────────────────────────────── -->
+    <div id="atm-popup"
+         class="hidden fixed inset-0 z-[100] items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="popup-card w-full max-w-md rounded-2xl p-6 relative">
+            <!-- Close button -->
+            <button onclick="hidePopup()"
+                class="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <!-- Header -->
+            <div class="flex items-start gap-4 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-primary-container bg-opacity-10 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-primary-container">atm</span>
+                </div>
+                <div>
+                    <h2 id="popup-name" class="font-headline text-lg font-bold text-on-surface">—</h2>
+                    <p id="popup-location" class="text-sm text-on-surface-variant">—</p>
+                </div>
+                <span id="popup-status" class="status-badge ml-auto">—</span>
+            </div>
+
+            <!-- Cash Level Bar -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Cash Level</span>
+                    <span id="popup-cash" class="text-sm font-bold text-on-surface">—</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-surface-container-high overflow-hidden">
+                    <div id="popup-cash-bar" class="h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Detail Grid -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="info-cell">
+                    <p class="info-label">Time to Empty</p>
+                    <p id="popup-tte" class="info-value text-primary-fixed-dim">—</p>
+                </div>
+                <div class="info-cell">
+                    <p class="info-label">Daily Withdrawal</p>
+                    <p id="popup-rate" class="info-value">—</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js" defer></script>
 </body>
 

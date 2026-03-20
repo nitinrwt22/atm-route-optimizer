@@ -1,3 +1,4 @@
+/* ─── CSS Custom Properties (Design Tokens) ─────────────────────────────── */
 :root {
     --surface: #f8fafc;
     --outline: #475569;
@@ -98,40 +99,136 @@
     --on-surface: #e5e2e1;
 }
 
+/* ─── Material Symbols ──────────────────────────────────────────────────── */
 .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-.pulse-glow-red {
-    box-shadow: 0 0 15px #c20014;
-    animation: pulse-red 2s infinite;
+/* ─── Page Background ───────────────────────────────────────────────────── */
+body {
+    background: radial-gradient(circle at top right, var(--surface-container-low), var(--surface));
+    min-height: max(884px, 100dvh);
 }
 
-@keyframes pulse-red {
-    0% {
-        transform: scale(0.95);
-        opacity: 0.7;
-    }
-
-    50% {
-        transform: scale(1.1);
-        opacity: 1;
-        box-shadow: 0 0 25px #c20014;
-    }
-
-    100% {
-        transform: scale(0.95);
-        opacity: 0.7;
-    }
-}
-
+/* ─── Glassmorphism Panel ───────────────────────────────────────────────── */
 .glass-panel {
     background: color-mix(in srgb, var(--surface) 60%, transparent);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid color-mix(in srgb, var(--primary-container) 10%, transparent);
 }
 
-body {
-    background: radial-gradient(circle at top right, var(--surface-container-low), var(--surface));
-    min-height: max(884px, 100dvh);
+/* ─── ATM Map Canvas ────────────────────────────────────────────────────── */
+.atm-map-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    cursor: crosshair;
+    display: block;
+}
+
+/* ─── Status Badges ─────────────────────────────────────────────────────── */
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.status-critical {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.status-high {
+    background: rgba(250, 204, 21, 0.15);
+    color: #FACC15;
+    border: 1px solid rgba(250, 204, 21, 0.3);
+}
+.status-medium {
+    background: rgba(96, 165, 250, 0.15);
+    color: #60A5FA;
+    border: 1px solid rgba(96, 165, 250, 0.3);
+}
+.status-low {
+    background: rgba(74, 222, 128, 0.15);
+    color: #4ADE80;
+    border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+/* ─── Urgent List Scrollbar Hide ────────────────────────────────────────── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Pulse Animations ──────────────────────────────────────────────────── */
+.pulse-glow-red {
+    box-shadow: 0 0 15px #c20014;
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+    0%   { transform: scale(0.95); opacity: 0.7; }
+    50%  { transform: scale(1.1);  opacity: 1;   box-shadow: 0 0 25px #c20014; }
+    100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+/* ─── Map Tooltip ────────────────────────────────────────────────────────── */
+.map-tooltip {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--surface-container-highest) 90%, transparent);
+    backdrop-filter: blur(12px);
+    border: 1px solid color-mix(in srgb, var(--primary-container) 20%, transparent);
+    color: var(--on-surface);
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    line-height: 1.6;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    max-width: 240px;
+    display: none;
+}
+.map-tooltip .tip-loc {
+    color: var(--on-surface-variant);
+    font-size: 10px;
+}
+
+/* ─── Popup Modal Card ────────────────────────────────────────────────────── */
+.popup-card {
+    background: color-mix(in srgb, var(--surface-container-low) 92%, transparent);
+    backdrop-filter: blur(24px);
+    border: 1px solid color-mix(in srgb, var(--primary-container) 15%, transparent);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 242, 255, 0.05);
+    animation: popup-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes popup-in {
+    from { transform: scale(0.92); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
+
+/* ─── Popup Info Cells ───────────────────────────────────────────────────── */
+.info-cell {
+    background: var(--surface-container-high);
+    border-radius: 12px;
+    padding: 12px;
+}
+.info-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--on-surface-variant);
+    margin-bottom: 4px;
+}
+.info-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--on-surface);
 }

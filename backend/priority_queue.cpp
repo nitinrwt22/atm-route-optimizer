@@ -86,9 +86,9 @@ struct CompareTime {
 // Time-based status classification
 string getStatus(double timeToEmpty) {
     if (timeToEmpty <= 2.0)       return "CRITICAL";
-    else if (timeToEmpty <= 6.0)  return "HIGH    ";
-    else if (timeToEmpty <= 12.0) return "MEDIUM  ";
-    else                          return "LOW     ";
+    else if (timeToEmpty <= 6.0)  return "HIGH";
+    else if (timeToEmpty <= 12.0) return "MEDIUM";
+    else                          return "LOW";
 }
 
 // Random double in [lo, hi]
@@ -133,20 +133,26 @@ void saveToFile(const vector<ATM>& atms, const string& filename) {
 // Save JSON output for visualization
 void saveToJSON(vector<ATM>& atms, vector<int>& route) {
     ofstream file("output.json");
+    file << fixed << setprecision(2);
 
     file << "{\n";
     file << "  \"atms\": [\n";
 
     for (int i = 0; i < (int)atms.size(); i++) {
+        double tte = (atms[i].timeToEmpty >= 1e9) ? 9999.99 : atms[i].timeToEmpty;
+        string status = getStatus(atms[i].timeToEmpty);
+
         file << "    {";
-        file << "\"id\": "         << atms[i].id           << ", ";
-        file << "\"name\": \""     << atms[i].name         << "\", ";
-        file << "\"location\": \"" << atms[i].location     << "\", ";
-        file << "\"x\": "          << atms[i].x            << ", ";
-        file << "\"y\": "          << atms[i].y            << ", ";
-        file << "\"cashLevel\": "  << atms[i].cashLevel    << ", ";
-        file << "\"timeToEmpty\": "<< (atms[i].timeToEmpty >= 1e9 ? 9999.99 : atms[i].timeToEmpty) << ", ";
-        file << "\"days\": "       << atms[i].daysSinceRefill;
+        file << "\"id\": "                  << atms[i].id                  << ", ";
+        file << "\"name\": \""              << atms[i].name                << "\", ";
+        file << "\"location\": \""          << atms[i].location            << "\", ";
+        file << "\"x\": "                   << atms[i].x                   << ", ";
+        file << "\"y\": "                   << atms[i].y                   << ", ";
+        file << "\"cashLevel\": "           << atms[i].cashLevel           << ", ";
+        file << "\"dailyWithdrawalRate\": " << atms[i].dailyWithdrawalRate << ", ";
+        file << "\"timeToEmpty\": "         << tte                         << ", ";
+        file << "\"days\": "                << atms[i].daysSinceRefill     << ", ";
+        file << "\"status\": \""            << status                      << "\"";
         file << "}";
         if (i != (int)atms.size() - 1) file << ",";
         file << "\n";
@@ -162,6 +168,7 @@ void saveToJSON(vector<ATM>& atms, vector<int>& route) {
     file << "}\n";
 
     file.close();
+    cout << "\n[JSON] ATM data saved to 'output.json'\n";
 }
 
 int main() {

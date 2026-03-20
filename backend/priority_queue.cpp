@@ -180,16 +180,47 @@ int main() {
 
     for (int i = 0; i < 100; i++) {
         ATM a;
-        a.id                  = i + 1;
-        a.name                = "ATM_" + string(3 - to_string(i + 1).size(), '0') + to_string(i + 1);
-        a.location            = LOCATIONS[i];
-        a.x                   = randDouble(0.0, 100.0);
-        a.y                   = randDouble(0.0, 100.0);
-        a.cashLevel           = randDouble(0.0, 100.0);
-        a.dailyWithdrawalRate = randDouble(500.0, 5000.0);
-        a.daysSinceRefill     = randInt(1, 15);
-        a.timeToEmpty         = 0.0;
-        a.truckAssigned       = -1;
+        a.id       = i + 1;
+        a.name     = "ATM_" + string(3 - to_string(i + 1).size(), '0') + to_string(i + 1);
+        a.location = LOCATIONS[i];
+        a.x        = randDouble(0.0, 100.0);
+        a.y        = randDouble(0.0, 100.0);
+
+        // Urgency segmentation — formulae verified:
+        // timeToEmpty (hrs) = (cashLevel / 100) * 1,000,000 / (dailyWithdrawalRate / 24)
+        //                   = cashLevel * 240,000 / dailyWithdrawalRate
+
+        if (i < 12) {
+            // ─ CRITICAL: timeToEmpty ≤ 2 hrs (~12 ATMs)
+            // rate ∈ [75k,95k], cashLevel ∈ [0.05,0.45]
+            // → timeToEmpty ∈ [0.11, 1.44] hrs  ✓
+            a.dailyWithdrawalRate = randDouble(75000.0, 95000.0);
+            a.cashLevel           = randDouble(0.05, 0.45);
+
+        } else if (i < 30) {
+            // ─ HIGH: 2 < timeToEmpty ≤ 6 hrs (~18 ATMs)
+            // rate ∈ [68k,72k] (narrow so range is tight), cashLevel ∈ [0.65, 1.60]
+            // → timeToEmpty ∈ [2.17, 5.65] hrs  ✓
+            a.dailyWithdrawalRate = randDouble(68000.0, 72000.0);
+            a.cashLevel           = randDouble(0.65, 1.60);
+
+        } else if (i < 55) {
+            // ─ MEDIUM: 6 < timeToEmpty ≤ 12 hrs (~25 ATMs)
+            // rate ∈ [45k,55k], cashLevel ∈ [1.5, 2.1]
+            // → timeToEmpty ∈ [6.55, 11.20] hrs  ✓
+            a.dailyWithdrawalRate = randDouble(45000.0, 55000.0);
+            a.cashLevel           = randDouble(1.5, 2.1);
+
+        } else {
+            // ─ LOW: timeToEmpty > 12 hrs (~45 ATMs)
+            // original realistic Indian ATM parameters
+            a.dailyWithdrawalRate = randDouble(500.0, 5000.0);
+            a.cashLevel           = randDouble(15.0, 100.0);
+        }
+
+        a.daysSinceRefill = randInt(1, 15);
+        a.timeToEmpty     = 0.0;
+        a.truckAssigned   = -1;
         atms.push_back(a);
     }
 

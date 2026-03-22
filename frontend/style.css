@@ -54,10 +54,20 @@
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
+html { scroll-behavior: smooth; }
+
 /* ─── Page Background ───────────────────────────────────────────────────── */
 body {
     background: radial-gradient(circle at top right, var(--surface-container-low), var(--surface));
     min-height: max(884px, 100dvh);
+}
+
+/* ─── Sidebar Active State ───────────────────────────────────────────────── */
+.nav-active {
+    color: var(--primary-container) !important;
+    background: color-mix(in srgb, var(--primary-container) 10%, transparent) !important;
+    border-right: 2px solid var(--primary-container);
+    box-shadow: inset -10px 0 15px rgba(0, 242, 255, 0.05);
 }
 
 /* ─── Glassmorphism Panel ───────────────────────────────────────────────── */

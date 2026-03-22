@@ -483,13 +483,7 @@ if (sidebarToggle && desktopSidebar && layoutWrapper) {
     });
 }
 
-// ─── Theme Toggle ────────────────────────────────────────────────────────────
-const themeToggle = document.getElementById('theme-toggle');
-if (themeToggle) {
-    themeToggle.addEventListener('click', () => {
-        document.documentElement.classList.toggle('dark');
-    });
-}
+
 
 // ─── Run Optimization Button ─────────────────────────────────────────────────
 const runBtn = document.getElementById('run-optimization-btn');

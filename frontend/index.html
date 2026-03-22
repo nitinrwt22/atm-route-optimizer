@@ -295,72 +295,41 @@
                     </div>
                 </div>
 
-                <!-- Wide Panel: Performance Insights -->
+                <!-- Wide Panel: Fleet Cash Health -->
                 <div
                     class="md:col-span-3 p-8 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-2xl relative overflow-hidden">
-                    <div
-                        class="absolute top-0 right-0 w-64 h-64 bg-primary-container bg-opacity-5 blur-[100px] pointer-events-none">
-                    </div>
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-primary-container bg-opacity-5 blur-[100px] pointer-events-none"></div>
+
+                    <!-- Header -->
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                         <div>
-                            <h3
-                                class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant mb-1">
-                                Performance Insights</h3>
-                            <p class="text-2xl font-bold font-headline">Predictive Optimization Flow</p>
+                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant mb-1">Fleet Cash Health</h3>
+                            <p class="text-2xl font-bold font-headline">Cash Level Distribution</p>
                         </div>
                         <div class="flex gap-8">
                             <div>
-                                <p class="text-[10px] uppercase text-on-surface-variant font-bold">Outages Prevented</p>
-                                <p class="text-xl font-bold text-primary-container">+142</p>
+                                <p class="text-[10px] uppercase text-on-surface-variant font-bold">Avg Cash Level</p>
+                                <p id="stat-avg-cash" class="text-xl font-bold text-primary-container">—</p>
                             </div>
                             <div>
-                                <p class="text-[10px] uppercase text-on-surface-variant font-bold">Efficiency gain</p>
-                                <p class="text-xl font-bold text-secondary-container">22.4%</p>
+                                <p class="text-[10px] uppercase text-on-surface-variant font-bold">ATMs Below 25%</p>
+                                <p id="stat-low-cash" class="text-xl font-bold text-secondary-container">—</p>
                             </div>
                         </div>
                     </div>
-                    <!-- Simple Bar Chart -->
-                    <div class="relative h-32 w-full flex items-end gap-1 px-2">
-                        <div
-                            class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[40%]">
-                        </div>
-                        <div
-                            class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[35%]">
-                        </div>
-                        <div
-                            class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[55%]">
-                        </div>
-                        <div
-                            class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[70%]">
-                        </div>
-                        <div
-                            class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[65%]">
-                        </div>
-                        <div
-                            class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[85%]">
-                        </div>
-                        <div
-                            class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[95%]">
-                        </div>
-                        <div
-                            class="flex-1 bg-primary-container bg-opacity-20 hover:bg-primary-container hover:bg-opacity-40 transition-all rounded-t h-[80%]">
-                        </div>
-                        <div
-                            class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[90%]">
-                        </div>
-                        <div
-                            class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[100%]">
-                        </div>
-                        <div
-                            class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[85%]">
-                        </div>
-                        <div
-                            class="flex-1 bg-secondary-container bg-opacity-30 hover:bg-secondary-container hover:bg-opacity-50 transition-all rounded-t h-[75%]">
-                        </div>
-                        <div
-                            class="absolute bottom-[-24px] left-0 w-full flex justify-between text-[8px] uppercase font-bold text-on-surface-variant text-opacity-40 tracking-widest">
-                            <span>08:00 AM</span><span>12:00 PM</span><span>04:00 PM</span><span>08:00 PM</span>
-                        </div>
+
+                    <!-- Bar Chart — 5 buckets, rendered by JS -->
+                    <div class="relative h-36 w-full flex items-end gap-3 px-2" id="cash-dist-chart">
+                        <!-- bars injected by JS -->
+                    </div>
+
+                    <!-- X-axis labels -->
+                    <div class="flex justify-between mt-4 px-2">
+                        <span class="text-[9px] uppercase font-bold text-on-surface-variant/50 tracking-wider">0–10%</span>
+                        <span class="text-[9px] uppercase font-bold text-on-surface-variant/50 tracking-wider">10–25%</span>
+                        <span class="text-[9px] uppercase font-bold text-on-surface-variant/50 tracking-wider">25–50%</span>
+                        <span class="text-[9px] uppercase font-bold text-on-surface-variant/50 tracking-wider">50–75%</span>
+                        <span class="text-[9px] uppercase font-bold text-on-surface-variant/50 tracking-wider">75–100%</span>
                     </div>
                 </div>
             </div>

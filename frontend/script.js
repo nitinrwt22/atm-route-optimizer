@@ -69,6 +69,7 @@ function renderAll() {
     computeKnapsack();
     renderTruckBar();
     renderDispatchTable();
+    renderCashDistribution();
 }
 
 // ─── Knapsack DP (mirrors knapsack.cpp) ─────────────────────────────────────
@@ -614,6 +615,79 @@ function renderDispatchTable() {
     if (footLoad)    footLoad.textContent    = `₹${(totalLoad / 100000).toFixed(2)}L total`;
     if (footUrgency) footUrgency.textContent = `${totalValue} pts`;
     if (tfoot)       tfoot.classList.remove('hidden');
+}
+
+// ─── Fleet Cash Health — Cash Level Distribution ──────────────────────────────
+function renderCashDistribution() {
+    const chart      = document.getElementById('cash-dist-chart');
+    const avgEl      = document.getElementById('stat-avg-cash');
+    const lowCashEl  = document.getElementById('stat-low-cash');
+    if (!chart || !atmData.length) return;
+
+    // Define 5 buckets: label, range [min, max), color
+    const buckets = [
+        { label: '0–10%',   min: 0,  max: 10,  color: '#EF4444' },  // red — critical
+        { label: '10–25%',  min: 10, max: 25,  color: '#FACC15' },  // yellow — low
+        { label: '25–50%',  min: 25, max: 50,  color: '#60A5FA' },  // blue — medium
+        { label: '50–75%',  min: 50, max: 75,  color: '#a78bfa' },  // purple
+        { label: '75–100%', min: 75, max: 101, color: '#4ADE80' },  // green — healthy
+    ];
+
+    // Count ATMs per bucket (cap cashLevel at 100 for display)
+    buckets.forEach(b => {
+        b.count = atmData.filter(a => {
+            const cl = Math.min(a.cashLevel, 100);
+            return cl >= b.min && cl < b.max;
+        }).length;
+    });
+
+    const maxCount = Math.max(...buckets.map(b => b.count), 1);
+
+    // Stats
+    const avgCash  = atmData.reduce((s, a) => s + Math.min(a.cashLevel, 100), 0) / atmData.length;
+    const lowCount = atmData.filter(a => a.cashLevel < 25).length;
+    if (avgEl)     avgEl.textContent     = avgCash.toFixed(1) + '%';
+    if (lowCashEl) lowCashEl.textContent = lowCount + ' ATMs';
+
+    // Build bar markup
+    chart.innerHTML = buckets.map(b => {
+        const heightPct = ((b.count / maxCount) * 100).toFixed(1);
+        const tip       = `${b.label}: ${b.count} ATM${b.count !== 1 ? 's' : ''}`;
+        return `
+        <div class="flex-1 flex flex-col items-center justify-end h-full group relative">
+            <span class="text-[10px] font-black mb-1 transition-opacity opacity-0 group-hover:opacity-100"
+                  style="color:${b.color}">${b.count}</span>
+            <div class="cash-dist-bar w-full rounded-t cursor-pointer transition-all duration-700"
+                 style="height:0%; background:${b.color}22; border-top: 2px solid ${b.color}88;"
+                 data-target="${heightPct}"
+                 data-tip="${tip}"
+                 title="${tip}"></div>
+        </div>`;
+    }).join('');
+
+    // Animate bars (height 0 → target) after paint
+    requestAnimationFrame(() => {
+        chart.querySelectorAll('.cash-dist-bar').forEach(bar => {
+            setTimeout(() => {
+                bar.style.height = bar.dataset.target + '%';
+                bar.style.background = bar.style.borderTopColor.replace('88', '33');
+            }, 100);
+        });
+    });
+
+    // JS tooltip (reuse truck-tooltip pattern)
+    let tip = document.getElementById('truck-tooltip');
+    chart.querySelectorAll('.cash-dist-bar').forEach(bar => {
+        bar.addEventListener('mouseenter', () => {
+            if (tip) { tip.textContent = bar.dataset.tip; tip.style.display = 'block'; }
+        });
+        bar.addEventListener('mousemove', e => {
+            if (tip) { tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY - 36) + 'px'; }
+        });
+        bar.addEventListener('mouseleave', () => {
+            if (tip) tip.style.display = 'none';
+        });
+    });
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────

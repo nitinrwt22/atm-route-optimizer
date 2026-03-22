@@ -6,6 +6,16 @@
 // ─── Global State ───────────────────────────────────────────────────────────
 let atmData = [];
 
+// ─── Knapsack Constants (mirrors knapsack.cpp) ────────────────────────────────
+const ATM_CAPACITY   = 1_000_000;  // ₹10 lakh per ATM
+const TRUCK_CAPACITY = 5000;       // ₹50 lakh ÷ 1000 (DP scale)
+const TOP_N          = 25;
+
+// ─── Knapsack State ───────────────────────────────────────────────────────────
+let knapsackSelected = new Set(); // Set of selected ATM IDs
+let knapsackStats    = null;      // { selectedATMs, totalLoad, totalValue }
+let dispatchMode     = false;
+
 // ─── Status Helpers ──────────────────────────────────────────────────────────
 function getStatus(tte) {
     if (tte <= 2)    return 'CRITICAL';
@@ -56,6 +66,80 @@ function renderAll() {
     renderUrgentPanel();
     updateDonutChart();
     renderMapMarkers();
+    computeKnapsack();
+    renderTruckBar();
+    renderDispatchTable();
+}
+
+// ─── Knapsack DP (mirrors knapsack.cpp) ─────────────────────────────────────
+function computeKnapsack() {
+    // Sort ascending by timeToEmpty → take top N most urgent
+    const candidates = [...atmData]
+        .sort((a, b) => a.timeToEmpty - b.timeToEmpty)
+        .slice(0, TOP_N);
+
+    const n = candidates.length;
+
+    // Compute per-ATM weight & value (same formulas as C++)
+    const items = candidates.map(atm => {
+        const actualCash   = (atm.cashLevel / 100) * ATM_CAPACITY;
+        const refillAmount = ATM_CAPACITY - actualCash;
+        const weight       = Math.max(1, Math.round(refillAmount / 1000));
+        const value        = atm.timeToEmpty <= 0     ? 9999
+                           : atm.timeToEmpty >= 100000 ? 1
+                           : Math.round(1000 / atm.timeToEmpty);
+        return { atm, actualCash, refillAmount, weight, value };
+    });
+
+    // Build DP table — use 1-D rolling array for memory efficiency
+    const dp = new Int32Array(TRUCK_CAPACITY + 1);
+    for (let i = 0; i < n; i++) {
+        const { weight, value } = items[i];
+        for (let cap = TRUCK_CAPACITY; cap >= weight; cap--) {
+            if (dp[cap - weight] + value > dp[cap])
+                dp[cap] = dp[cap - weight] + value;
+        }
+    }
+    const maxValue = dp[TRUCK_CAPACITY];
+
+    // Backtrack to find selected indices (rebuild 2-D table for backtracking)
+    const dpFull = [];
+    dpFull.push(new Int32Array(TRUCK_CAPACITY + 1)); // row 0 = zeros
+    for (let i = 0; i < n; i++) {
+        const prev = dpFull[i];
+        const curr = new Int32Array(prev);
+        const { weight, value } = items[i];
+        for (let cap = weight; cap <= TRUCK_CAPACITY; cap++) {
+            if (prev[cap - weight] + value > curr[cap])
+                curr[cap] = prev[cap - weight] + value;
+        }
+        dpFull.push(curr);
+    }
+
+    const selected = [];
+    let cap = TRUCK_CAPACITY;
+    for (let i = n; i >= 1; i--) {
+        if (dpFull[i][cap] !== dpFull[i - 1][cap]) {
+            selected.push(items[i - 1]);
+            cap -= items[i - 1].weight;
+        }
+    }
+
+    // Sort selected by urgency (most urgent first)
+    selected.sort((a, b) => a.atm.timeToEmpty - b.atm.timeToEmpty);
+
+    knapsackSelected = new Set(selected.map(s => s.atm.id));
+    knapsackStats = {
+        selectedItems: selected,
+        totalLoad:  selected.reduce((s, it) => s + it.refillAmount, 0),
+        totalValue: selected.reduce((s, it) => s + it.value, 0),
+        maxValue,
+        truckCapacityRupees: TRUCK_CAPACITY * 1000,
+    };
+
+    // Redraw map to apply glow if dispatch mode is already on
+    const canvas = document.getElementById('atm-map-canvas');
+    if (canvas) draw(canvas);
 }
 
 // ─── 1. Summary Card ─────────────────────────────────────────────────────────
@@ -204,21 +288,72 @@ function atmToCanvas(atm, canvas) {
     return { cx, cy };
 }
 
+// Animated ring phase for dispatch mode (0–1 over time)
+let _ringPhase = 0;
+let _ringAnim  = null;
+
+function startRingAnimation(canvas) {
+    if (_ringAnim) return;
+    const step = () => {
+        _ringPhase = (Date.now() % 1600) / 1600; // 1.6s period
+        draw(canvas);
+        _ringAnim = requestAnimationFrame(step);
+    };
+    _ringAnim = requestAnimationFrame(step);
+}
+function stopRingAnimation(canvas) {
+    if (_ringAnim) { cancelAnimationFrame(_ringAnim); _ringAnim = null; }
+    draw(canvas);
+}
+
 function draw(canvas) {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     atmData.forEach(atm => {
         const { cx, cy } = atmToCanvas(atm, canvas);
-        const color = STATUS_COLOR[atm.status] || '#4ADE80';
-        const isHovered = hoveredAtm && hoveredAtm.id === atm.id;
+        const color      = STATUS_COLOR[atm.status] || '#4ADE80';
+        const isHovered  = hoveredAtm && hoveredAtm.id === atm.id;
+        const isSelected = knapsackSelected.has(atm.id);
+
+        // In dispatch mode — dim non-selected ATMs
+        if (dispatchMode && !isSelected && !isHovered) {
+            ctx.globalAlpha = 0.18;
+        } else {
+            ctx.globalAlpha = 1;
+        }
+
         const r = isHovered ? 8 : (atm.status === 'CRITICAL' ? 7 : 5);
 
         // Glow
-        ctx.shadowColor = color;
-        ctx.shadowBlur  = isHovered ? 20 : (atm.status === 'CRITICAL' ? 14 : 8);
+        ctx.shadowColor = dispatchMode && isSelected ? '#00f2ff' : color;
+        ctx.shadowBlur  = isHovered ? 20
+                        : (dispatchMode && isSelected) ? 22
+                        : (atm.status === 'CRITICAL' ? 14 : 8);
 
-        // Outer ring for critical
+        // Pulsing outer ring for knapsack-selected ATMs in dispatch mode
+        if (dispatchMode && isSelected) {
+            const phase  = (Math.sin(_ringPhase * Math.PI * 2) + 1) / 2; // 0→1→0
+            const ringR  = r + 6 + phase * 6;
+            const alpha  = 0.7 - phase * 0.5;
+            ctx.beginPath();
+            ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(0, 242, 255, ${alpha})`;
+            ctx.lineWidth   = 2;
+            ctx.shadowColor = '#00f2ff';
+            ctx.shadowBlur  = 10;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Second, tighter ring
+            ctx.beginPath();
+            ctx.arc(cx, cy, r + 3, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(0, 242, 255, 0.6)';
+            ctx.lineWidth   = 1.5;
+            ctx.stroke();
+        }
+
+        // Standard outer ring for critical
         if (atm.status === 'CRITICAL') {
             ctx.beginPath();
             ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
@@ -227,13 +362,18 @@ function draw(canvas) {
             ctx.stroke();
         }
 
-        // Dot
+        // Core dot
+        ctx.shadowColor = dispatchMode && isSelected ? '#00f2ff' : color;
+        ctx.shadowBlur  = isHovered ? 20
+                        : (dispatchMode && isSelected) ? 18
+                        : (atm.status === 'CRITICAL' ? 14 : 8);
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = color;
+        ctx.fillStyle = dispatchMode && isSelected ? '#00f2ff' : color;
         ctx.fill();
 
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur  = 0;
+        ctx.globalAlpha = 1;
     });
 }
 
@@ -360,6 +500,120 @@ if (runBtn) {
         runBtn.textContent = 'Run Optimization';
         runBtn.disabled    = false;
     });
+}
+
+// ─── Dispatch Mode Toggle ─────────────────────────────────────────────────
+const dispatchToggle = document.getElementById('dispatch-mode-toggle');
+const dispatchLabel  = document.getElementById('dispatch-mode-label');
+if (dispatchToggle) {
+    dispatchToggle.addEventListener('click', () => {
+        dispatchMode = !dispatchMode;
+        dispatchToggle.classList.toggle('active', dispatchMode);
+        if (dispatchLabel) dispatchLabel.textContent = dispatchMode ? 'ON' : 'OFF';
+
+        const canvas = document.getElementById('atm-map-canvas');
+        if (canvas) {
+            if (dispatchMode) startRingAnimation(canvas);
+            else              stopRingAnimation(canvas);
+        }
+
+        // Re-highlight rows in the dispatch table
+        document.querySelectorAll('#dispatch-tbody tr[data-atm-id]').forEach(row => {
+            row.classList.toggle('dispatch-row-selected', dispatchMode);
+        });
+    });
+}
+
+// ─── Truck Bar Renderer ───────────────────────────────────────────────────────
+function renderTruckBar() {
+    if (!knapsackStats) return;
+    const { selectedItems, totalLoad, truckCapacityRupees } = knapsackStats;
+
+    const pct = Math.min((totalLoad / truckCapacityRupees) * 100, 100);
+    const fill      = document.getElementById('truck-bar-fill');
+    const loadLabel = document.getElementById('truck-load-label');
+    const pctPill   = document.getElementById('truck-pct-pill');
+
+    if (loadLabel) loadLabel.textContent = `₹${(totalLoad / 100000).toFixed(2)} lakh / ₹50 lakh`;
+    if (pctPill)   pctPill.textContent   = `${pct.toFixed(1)}%`;
+
+    if (!fill) return;
+
+    // Animate bar fill after short delay so CSS transition plays
+    setTimeout(() => { fill.style.width = pct + '%'; }, 80);
+
+    // Build per-ATM color blocks
+    const totalWeight = selectedItems.reduce((s, it) => s + it.weight, 0);
+    fill.innerHTML = selectedItems.map(it => {
+        const blockPct = totalWeight > 0 ? (it.weight / totalWeight) * 100 : 0;
+        const color    = STATUS_COLOR[it.atm.status] || '#4ADE80';
+        const tip      = `${it.atm.name} · ${it.atm.location} · ₹${(it.refillAmount / 100000).toFixed(1)}L · ${it.atm.timeToEmpty.toFixed(1)}h left`;
+        return `<div class="truck-atm-block"
+                     style="width:${blockPct}%; background:${color}44; border-color:${color}55;"
+                     data-tip="${tip}"></div>`;
+    }).join('');
+
+    // ── JS-driven tooltip (body-appended, escapes overflow:hidden) ──
+    let tip = document.getElementById('truck-tooltip');
+    if (!tip) {
+        tip = document.createElement('div');
+        tip.id        = 'truck-tooltip';
+        tip.className = 'truck-tooltip';
+        document.body.appendChild(tip);
+    }
+
+    fill.querySelectorAll('.truck-atm-block').forEach(block => {
+        block.addEventListener('mouseenter', () => {
+            tip.textContent  = block.dataset.tip;
+            tip.style.display = 'block';
+        });
+        block.addEventListener('mousemove', e => {
+            tip.style.left = (e.clientX + 14) + 'px';
+            tip.style.top  = (e.clientY - 36) + 'px';
+        });
+        block.addEventListener('mouseleave', () => {
+            tip.style.display = 'none';
+        });
+    });
+}
+
+// ─── Dispatch Table Renderer ──────────────────────────────────────────────────
+function renderDispatchTable() {
+    const tbody       = document.getElementById('dispatch-tbody');
+    const tfoot       = document.getElementById('dispatch-tfoot');
+    const badge       = document.getElementById('dispatch-count-badge');
+    const footLoad    = document.getElementById('foot-load');
+    const footUrgency = document.getElementById('foot-urgency');
+    if (!tbody || !knapsackStats) return;
+
+    const { selectedItems, totalLoad, totalValue } = knapsackStats;
+    if (badge) badge.textContent = `${selectedItems.length} ATMs`;
+
+    tbody.innerHTML = selectedItems.map((it, i) => {
+        const atm       = it.atm;
+        const cls       = STATUS_LABEL_CLASS[atm.status] || 'status-low';
+        const timeColor = atm.status === 'CRITICAL' ? 'text-red-400'
+                        : atm.status === 'HIGH'     ? 'text-yellow-400'
+                        : atm.status === 'MEDIUM'   ? 'text-blue-400'
+                        : 'text-green-400';
+        const tte  = Math.min(atm.timeToEmpty, 9999.99).toFixed(2);
+        const rank = String(i + 1).padStart(2, '0');
+
+        return `<tr data-atm-id="${atm.id}" class="cursor-pointer"
+                    onclick="showPopup(atmData.find(a=>a.id===${atm.id}))">
+            <td class="font-black ${timeColor} w-8">${rank}</td>
+            <td class="font-bold uppercase tracking-tight">${atm.name}</td>
+            <td class="text-on-surface-variant">${atm.location}</td>
+            <td class="font-bold text-primary-fixed-dim">₹${(it.refillAmount / 100000).toFixed(2)}L</td>
+            <td class="font-bold ${timeColor}">${tte} hrs</td>
+            <td class="text-on-surface-variant">${it.value}</td>
+            <td><span class="status-badge ${cls}">${atm.status}</span></td>
+        </tr>`;
+    }).join('');
+
+    if (footLoad)    footLoad.textContent    = `₹${(totalLoad / 100000).toFixed(2)}L total`;
+    if (footUrgency) footUrgency.textContent = `${totalValue} pts`;
+    if (tfoot)       tfoot.classList.remove('hidden');
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────

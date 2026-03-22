@@ -232,3 +232,140 @@ body {
     font-weight: 700;
     color: var(--on-surface);
 }
+
+/* ─── Truck Load Bar ─────────────────────────────────────────────────────── */
+.truck-bar-track {
+    position: relative;
+    width: 100%;
+    height: 48px;
+    background: var(--surface-container-high);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--primary-container) 15%, transparent);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.truck-bar-fill {
+    display: flex;
+    height: 100%;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--primary-container) 60%, transparent),
+        color-mix(in srgb, var(--secondary-container) 50%, transparent));
+    transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* shimmer sweep */
+.truck-bar-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+    animation: bar-shimmer 2.5s infinite;
+}
+
+@keyframes bar-shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.truck-atm-block {
+    position: relative;
+    height: 100%;
+    border-right: 1px solid rgba(0,0,0,0.3);
+    transition: filter 0.2s;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.truck-atm-block:hover {
+    filter: brightness(1.4);
+    z-index: 2;
+}
+
+/* JS-driven truck tooltip (appended to body, escapes overflow:hidden) */
+.truck-tooltip {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--surface-container-highest) 95%, transparent);
+    backdrop-filter: blur(12px);
+    color: var(--on-surface);
+    border: 1px solid color-mix(in srgb, var(--primary-container) 25%, transparent);
+    padding: 7px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    display: none;
+}
+
+/* ─── Dispatch Table ─────────────────────────────────────────────────────── */
+.dispatch-table {
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.dispatch-table thead {
+    position: sticky;
+    top: 0;
+    background: var(--surface-container);
+    z-index: 1;
+}
+
+.dispatch-table thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    border-bottom: 1px solid color-mix(in srgb, var(--primary-container) 10%, transparent);
+}
+
+.dispatch-table tbody tr {
+    border-bottom: 1px solid color-mix(in srgb, var(--outline-variant) 20%, transparent);
+    transition: background 0.15s;
+}
+
+.dispatch-table tbody tr:hover {
+    background: color-mix(in srgb, var(--surface-container-high) 60%, transparent);
+}
+
+.dispatch-table tbody tr.dispatch-row-selected {
+    background: color-mix(in srgb, var(--primary-container) 5%, transparent);
+}
+
+.dispatch-table tbody td {
+    padding: 12px 16px;
+    vertical-align: middle;
+    color: var(--on-surface);
+}
+
+.dispatch-table tfoot td {
+    padding: 14px 16px;
+    border-top: 2px solid color-mix(in srgb, var(--primary-container) 20%, transparent);
+    background: color-mix(in srgb, var(--surface-container) 80%, transparent);
+}
+
+.dispatch-footer-row td {
+    font-size: 12px;
+}
+
+/* ─── Knapsack Map Ring Pulse ────────────────────────────────────────────── */
+@keyframes ring-pulse {
+    0%   { transform: scale(1);   opacity: 0.9; }
+    50%  { transform: scale(1.5); opacity: 0.3; }
+    100% { transform: scale(1);   opacity: 0.9; }
+}
+
+/* Dispatch mode toggle — active state */
+#dispatch-mode-toggle.active {
+    background: color-mix(in srgb, var(--primary-container) 10%, transparent);
+    border-color: var(--primary-container);
+    color: var(--primary-container);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--primary-container) 20%, transparent);
+}

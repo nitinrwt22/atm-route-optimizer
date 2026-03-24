@@ -12,9 +12,39 @@ An intelligent cash replenishment platform that monitors, prioritizes, and optim
   - **Top Urgent Panel & Modals:** At-a-glance lists showing ATMs that need immediate attention with detailed cash level breakdown popups.
 
 ## Tech Stack 🛠️
-- **Backend Algorithms:** C++17 (0/1 DP Knapsack, Custom Structs, Priority Queues)
-- **Frontend / UI:** Vanilla HTML5, CSS3, JavaScript, Tailwind CSS (via CDN)
-- **Server:** Python 3 HTTP Server (for local JSON data delivery)
+
+**Backend Algorithms (C++)**
+![C++](https://img.shields.io/badge/C++-%2300599C.svg?style=flat&logo=c%2B%2B&logoColor=white)
+- C++17 engineered for high-performance execution.
+- Implements Custom Structs, Min-Heap Priority Queues, and a 1-D Dynamic Programming 0/1 Knapsack optimization algorithm.
+
+**Frontend Dashboard (Web)**
+![HTML5](https://img.shields.io/badge/HTML5-%23E34F26.svg?style=flat&logo=html5&logoColor=white) ![CSS3](https://img.shields.io/badge/CSS3-%231572B6.svg?style=flat&logo=css3&logoColor=white) ![JavaScript](https://img.shields.io/badge/JavaScript-%23323330.svg?style=flat&logo=javascript&logoColor=%23F7DF1E) ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-%2338B2AC.svg?style=flat&logo=tailwind-css&logoColor=white)
+- Vanilla HTML5, CSS3, and JS with Tailwind CSS (via CDN) for rapid glassmorphic styling.
+- Highly interactive HTML5 Canvas for map rendering, glowing markers, and spatial mathematics.
+
+**Server & Networking**
+![Python](https://img.shields.io/badge/Python-%2314354C.svg?style=flat&logo=python&logoColor=white)
+- Python 3 HTTP Server for secure, local JSON data delivery (CORS bypass).
+- Native Fetch API for asynchronous state and data updates.
+
+## Project Structure 📁
+
+```text
+atm-route-optimizer/
+│
+├── backend/
+│   ├── knapsack.cpp         # DP 0/1 Knapsack fleet dispatching logic
+│   ├── priority_queue.cpp   # Min-heap urgency classification & queueing
+│   └── output.json          # Generated simulation data (consumed by UI)
+│
+├── frontend/
+│   ├── index.html           # UI layout, canvas container, modal templates
+│   ├── style.css            # Custom component properties & animations
+│   └── script.js            # Core App logic, Fetch API, and Map rendering
+│
+└── README.md                # Project documentation
+```
 
 ## How to Run 🚀
 

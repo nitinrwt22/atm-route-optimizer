@@ -1,4 +1,4 @@
-// ATM Knapsack Optimization — 0/1 Knapsack DP to select optimal ATMs within truck capacity
+
 
 #include <iostream>
 #include <fstream>
@@ -11,26 +11,24 @@
 
 using namespace std;
 
-const double ATM_CAPACITY   = 1000000.0; // ₹10 lakh per ATM
-const int    TRUCK_CAPACITY = 5000;      // ₹50 lakh → divided by 1000 for DP scale
-const int    TOP_N          = 25;        // use only top 25 most urgent ATMs
+const double ATM_CAPACITY   = 1000000.0;
+const int    TRUCK_CAPACITY = 5000;
+const int    TOP_N          = 25;
 
-// ATM struct extended with knapsack-specific fields
 struct ATM {
     int    id;
     string name;
     string location;
-    double cashLevel;           // % remaining
+    double cashLevel;
     double dailyWithdrawalRate;
     int    daysSinceRefill;
-    double timeToEmpty;         // hours until ATM is empty
-    double actualCash;          // ₹ currently in ATM
-    double refillAmount;        // ₹ needed to fill to capacity
-    int    weight;              // refillAmount / 1000 (scaled for DP)
-    int    value;               // urgency: higher when timeToEmpty is smaller
+    double timeToEmpty;
+    double actualCash;
+    double refillAmount;
+    int    weight;
+    int    value;
 };
 
-// Parse one CSV line into an ATM; returns false if line is malformed
 bool parseLine(const string& line, ATM& atm) {
     stringstream ss(line);
     string token;
@@ -41,7 +39,7 @@ bool parseLine(const string& line, ATM& atm) {
     atm.id                  = stoi(fields[0]);
     atm.name                = fields[1];
     atm.location            = fields[2];
-    // fields[3] = x, fields[4] = y (not needed here)
+
     atm.cashLevel           = stod(fields[5]);
     atm.dailyWithdrawalRate = stod(fields[6]);
     atm.daysSinceRefill     = stoi(fields[7]);
@@ -49,7 +47,6 @@ bool parseLine(const string& line, ATM& atm) {
     return true;
 }
 
-// Load ATMs from CSV, compute knapsack fields, return top N by urgency
 vector<ATM> loadATMs(const string& filename) {
     ifstream in(filename);
     if (!in.is_open()) {
@@ -58,7 +55,7 @@ vector<ATM> loadATMs(const string& filename) {
     }
 
     string line;
-    getline(in, line); // skip header
+    getline(in, line);
 
     vector<ATM> atms;
     while (getline(in, line)) {
@@ -66,14 +63,11 @@ vector<ATM> loadATMs(const string& filename) {
         ATM a;
         if (!parseLine(line, a)) continue;
 
-        // Unit conversion: cashLevel % → actual ₹
         a.actualCash   = (a.cashLevel / 100.0) * ATM_CAPACITY;
         a.refillAmount = ATM_CAPACITY - a.actualCash;
 
-        // weight = refill rupees / 1000 (scales DP table to TRUCK_CAPACITY = 5000)
         a.weight = max(1, static_cast<int>(a.refillAmount / 1000.0));
 
-        // value = urgency; ATMs emptying sooner get higher value
         if (a.timeToEmpty <= 0.0)
             a.value = 9999;
         else if (a.timeToEmpty >= 100000.0)
@@ -85,50 +79,45 @@ vector<ATM> loadATMs(const string& filename) {
     }
     in.close();
 
-    // Sort ascending by timeToEmpty so most urgent ATMs come first
     sort(atms.begin(), atms.end(), [](const ATM& a, const ATM& b) {
         return a.timeToEmpty < b.timeToEmpty;
     });
 
-    // Keep only top N most urgent
     if ((int)atms.size() > TOP_N) atms.resize(TOP_N);
     return atms;
 }
 
-// 0/1 Knapsack DP; returns max urgency value achievable within TRUCK_CAPACITY
 int knapsack(const vector<ATM>& atms, vector<vector<int>>& dp) {
     int n = atms.size();
-    // dp[i][w] = max urgency using first i ATMs with weight budget w
+
     dp.assign(n + 1, vector<int>(TRUCK_CAPACITY + 1, 0));
 
     for (int i = 1; i <= n; i++) {
         int w = atms[i - 1].weight;
         int v = atms[i - 1].value;
         for (int cap = 0; cap <= TRUCK_CAPACITY; cap++) {
-            dp[i][cap] = dp[i - 1][cap]; // don't take ATM i
+            dp[i][cap] = dp[i - 1][cap];
             if (cap >= w)
-                dp[i][cap] = max(dp[i][cap], dp[i - 1][cap - w] + v); // take ATM i
+                dp[i][cap] = max(dp[i][cap], dp[i - 1][cap - w] + v);
         }
     }
     return dp[n][TRUCK_CAPACITY];
 }
 
-// Backtrack DP table to identify which ATMs were selected
 vector<int> backtrack(const vector<ATM>& atms, const vector<vector<int>>& dp) {
     int n   = atms.size();
     int cap = TRUCK_CAPACITY;
     vector<int> selected;
 
     for (int i = n; i >= 1; i--) {
-        if (dp[i][cap] != dp[i - 1][cap]) { // ATM i was taken
-            selected.push_back(i - 1);       // store 0-based index
+        if (dp[i][cap] != dp[i - 1][cap]) {
+            selected.push_back(i - 1);
             cap -= atms[i - 1].weight;
         }
     }
     return selected;
 }
 
-// Save selected ATMs to a text file
 void saveOutput(const vector<ATM>& atms, const vector<int>& selected,
                 double totalLoad, int totalValue) {
     ofstream out("knapsack_output.txt");
@@ -146,7 +135,7 @@ void saveOutput(const vector<ATM>& atms, const vector<int>& selected,
 }
 
 int main() {
-    // Load and prepare ATMs from priority queue output
+
     vector<ATM> atms = loadATMs("atm_data.txt");
     if (atms.empty()) {
         cerr << "No ATMs loaded. Run priority_queue first to generate atm_data.txt.\n";
@@ -156,14 +145,11 @@ int main() {
     int n = atms.size();
     cout << "\n[INFO] Loaded " << n << " ATMs (top " << TOP_N << " most urgent)\n";
 
-    // Run 0/1 Knapsack DP
     vector<vector<int>> dp;
     int maxValue = knapsack(atms, dp);
 
-    // Backtrack to find selected ATMs
     vector<int> selected = backtrack(atms, dp);
 
-    // Compute totals
     double totalLoad  = 0.0;
     int    totalValue = 0;
     for (int idx : selected) {
@@ -171,7 +157,6 @@ int main() {
         totalValue += atms[idx].value;
     }
 
-    // Console output
     cout << "\n";
     cout << "╔══════════════════════════════════════════════════════════════════════════════╗\n";
     cout << "║          ATM KNAPSACK OPTIMIZER — SELECTED ATMs FOR TRUCK DISPATCH          ║\n";

@@ -1,22 +1,17 @@
-// ATM Cash Replenishment Optimizer — Frontend Integration
-// Loads output.json from the C++ backend and drives the entire UI dynamically.
+
 
 'use strict';
 
-// ─── Global State ───────────────────────────────────────────────────────────
 let atmData = [];
 
-// ─── Knapsack Constants (mirrors knapsack.cpp) ────────────────────────────────
-const ATM_CAPACITY   = 1_000_000;  // ₹10 lakh per ATM
-const TRUCK_CAPACITY = 5000;       // ₹50 lakh ÷ 1000 (DP scale)
+const ATM_CAPACITY   = 1_000_000;
+const TRUCK_CAPACITY = 5000;
 const TOP_N          = 25;
 
-// ─── Knapsack State ───────────────────────────────────────────────────────────
-let knapsackSelected = new Set(); // Set of selected ATM IDs
-let knapsackStats    = null;      // { selectedATMs, totalLoad, totalValue }
+let knapsackSelected = new Set();
+let knapsackStats    = null;
 let dispatchMode     = false;
 
-// ─── Status Helpers ──────────────────────────────────────────────────────────
 function getStatus(tte) {
     if (tte <= 2)    return 'CRITICAL';
     if (tte <= 6)    return 'HIGH';
@@ -38,7 +33,6 @@ const STATUS_LABEL_CLASS = {
     LOW:      'status-low',
 };
 
-// ─── Data Loading ────────────────────────────────────────────────────────────
 async function loadATMData() {
     try {
         const resp = await fetch('/backend/output.json');
@@ -60,7 +54,6 @@ function showLoadError() {
     if (banner) banner.style.display = 'flex';
 }
 
-// ─── Render Everything ───────────────────────────────────────────────────────
 function renderAll() {
     updateSummaryCard();
     renderUrgentPanel();
@@ -72,16 +65,14 @@ function renderAll() {
     renderCashDistribution();
 }
 
-// ─── Knapsack DP (mirrors knapsack.cpp) ─────────────────────────────────────
 function computeKnapsack() {
-    // Sort ascending by timeToEmpty → take top N most urgent
+
     const candidates = [...atmData]
         .sort((a, b) => a.timeToEmpty - b.timeToEmpty)
         .slice(0, TOP_N);
 
     const n = candidates.length;
 
-    // Compute per-ATM weight & value (same formulas as C++)
     const items = candidates.map(atm => {
         const actualCash   = (atm.cashLevel / 100) * ATM_CAPACITY;
         const refillAmount = ATM_CAPACITY - actualCash;
@@ -92,7 +83,6 @@ function computeKnapsack() {
         return { atm, actualCash, refillAmount, weight, value };
     });
 
-    // Build DP table — use 1-D rolling array for memory efficiency
     const dp = new Int32Array(TRUCK_CAPACITY + 1);
     for (let i = 0; i < n; i++) {
         const { weight, value } = items[i];
@@ -103,9 +93,8 @@ function computeKnapsack() {
     }
     const maxValue = dp[TRUCK_CAPACITY];
 
-    // Backtrack to find selected indices (rebuild 2-D table for backtracking)
     const dpFull = [];
-    dpFull.push(new Int32Array(TRUCK_CAPACITY + 1)); // row 0 = zeros
+    dpFull.push(new Int32Array(TRUCK_CAPACITY + 1));
     for (let i = 0; i < n; i++) {
         const prev = dpFull[i];
         const curr = new Int32Array(prev);
@@ -126,7 +115,6 @@ function computeKnapsack() {
         }
     }
 
-    // Sort selected by urgency (most urgent first)
     selected.sort((a, b) => a.atm.timeToEmpty - b.atm.timeToEmpty);
 
     knapsackSelected = new Set(selected.map(s => s.atm.id));
@@ -138,12 +126,10 @@ function computeKnapsack() {
         truckCapacityRupees: TRUCK_CAPACITY * 1000,
     };
 
-    // Redraw map to apply glow if dispatch mode is already on
     const canvas = document.getElementById('atm-map-canvas');
     if (canvas) draw(canvas);
 }
 
-// ─── 1. Summary Card ─────────────────────────────────────────────────────────
 function updateSummaryCard() {
     const total    = atmData.length;
     const critical = atmData.filter(a => a.status === 'CRITICAL').length;
@@ -155,7 +141,6 @@ function updateSummaryCard() {
     set('stat-avg-time', avgTime.toFixed(1) + ' hrs');
 }
 
-// ─── 2. Top Urgent Panel ─────────────────────────────────────────────────────
 function renderUrgentPanel() {
     const list = document.getElementById('urgent-list');
     if (!list) return;
@@ -191,7 +176,6 @@ function renderUrgentPanel() {
         </div>`;
     }).join('');
 
-    // Make list items clickable → open popup
     list.querySelectorAll('.urgent-item').forEach(el => {
         el.addEventListener('click', () => {
             const id  = parseInt(el.dataset.atmId, 10);
@@ -201,7 +185,6 @@ function renderUrgentPanel() {
     });
 }
 
-// ─── 3. Donut Chart ──────────────────────────────────────────────────────────
 function updateDonutChart() {
     const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
     atmData.forEach(a => counts[a.status]++);
@@ -209,14 +192,11 @@ function updateDonutChart() {
 
     const pct = s => ((counts[s] / total) * 100).toFixed(0);
 
-    // Update legend text
     setText('legend-critical', `${pct('CRITICAL')}% Critical`);
     setText('legend-high',     `${pct('HIGH')}% High`);
     setText('legend-medium',   `${pct('MEDIUM')}% Medium`);
     setText('legend-low',      `${pct('LOW')}% Low`);
 
-    // Update SVG arcs — each arc uses stroke-dasharray="pct, 100"
-    // stacked with stroke-dashoffset to place them consecutively
     const critPct   = (counts.CRITICAL / total) * 100;
     const highPct   = (counts.HIGH     / total) * 100;
     const medPct    = (counts.MEDIUM   / total) * 100;
@@ -235,7 +215,6 @@ function setSVGArc(id, pct, offset) {
     el.setAttribute('stroke-dashoffset', offset === 0 ? '0' : `-${offset.toFixed(1)}`);
 }
 
-// ─── 4. Map Canvas Markers ───────────────────────────────────────────────────
 let hoveredAtm = null;
 
 function renderMapMarkers() {
@@ -248,7 +227,6 @@ function renderMapMarkers() {
 
     draw(canvas);
 
-    // Handle hover / click
     canvas.addEventListener('mousemove', e => {
         const rect = canvas.getBoundingClientRect();
         const mx   = e.clientX - rect.left;
@@ -273,7 +251,6 @@ function renderMapMarkers() {
         if (atm) showPopup(atm);
     });
 
-    // Redraw on resize
     window.addEventListener('resize', () => {
         canvas.width  = container.clientWidth;
         canvas.height = container.clientHeight;
@@ -282,21 +259,20 @@ function renderMapMarkers() {
 }
 
 function atmToCanvas(atm, canvas) {
-    // Pad 8% from edges so markers aren't clipped
+
     const pad = 0.08;
     const cx  = (pad + (atm.x / 100) * (1 - 2 * pad)) * canvas.width;
     const cy  = (pad + (atm.y / 100) * (1 - 2 * pad)) * canvas.height;
     return { cx, cy };
 }
 
-// Animated ring phase for dispatch mode (0–1 over time)
 let _ringPhase = 0;
 let _ringAnim  = null;
 
 function startRingAnimation(canvas) {
     if (_ringAnim) return;
     const step = () => {
-        _ringPhase = (Date.now() % 1600) / 1600; // 1.6s period
+        _ringPhase = (Date.now() % 1600) / 1600;
         draw(canvas);
         _ringAnim = requestAnimationFrame(step);
     };
@@ -317,7 +293,6 @@ function draw(canvas) {
         const isHovered  = hoveredAtm && hoveredAtm.id === atm.id;
         const isSelected = knapsackSelected.has(atm.id);
 
-        // In dispatch mode — dim non-selected ATMs
         if (dispatchMode && !isSelected && !isHovered) {
             ctx.globalAlpha = 0.18;
         } else {
@@ -326,15 +301,13 @@ function draw(canvas) {
 
         const r = isHovered ? 8 : (atm.status === 'CRITICAL' ? 7 : 5);
 
-        // Glow
         ctx.shadowColor = dispatchMode && isSelected ? '#00f2ff' : color;
         ctx.shadowBlur  = isHovered ? 20
                         : (dispatchMode && isSelected) ? 22
                         : (atm.status === 'CRITICAL' ? 14 : 8);
 
-        // Pulsing outer ring for knapsack-selected ATMs in dispatch mode
         if (dispatchMode && isSelected) {
-            const phase  = (Math.sin(_ringPhase * Math.PI * 2) + 1) / 2; // 0→1→0
+            const phase  = (Math.sin(_ringPhase * Math.PI * 2) + 1) / 2;
             const ringR  = r + 6 + phase * 6;
             const alpha  = 0.7 - phase * 0.5;
             ctx.beginPath();
@@ -346,7 +319,6 @@ function draw(canvas) {
             ctx.stroke();
             ctx.shadowBlur = 0;
 
-            // Second, tighter ring
             ctx.beginPath();
             ctx.arc(cx, cy, r + 3, 0, Math.PI * 2);
             ctx.strokeStyle = 'rgba(0, 242, 255, 0.6)';
@@ -354,7 +326,6 @@ function draw(canvas) {
             ctx.stroke();
         }
 
-        // Standard outer ring for critical
         if (atm.status === 'CRITICAL') {
             ctx.beginPath();
             ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
@@ -363,7 +334,6 @@ function draw(canvas) {
             ctx.stroke();
         }
 
-        // Core dot
         ctx.shadowColor = dispatchMode && isSelected ? '#00f2ff' : color;
         ctx.shadowBlur  = isHovered ? 20
                         : (dispatchMode && isSelected) ? 18
@@ -387,7 +357,6 @@ function findAtmAt(canvas, mx, my) {
     return null;
 }
 
-// ─── Map Tooltip ─────────────────────────────────────────────────────────────
 function renderTooltip(atm, px, py) {
     let tip = document.getElementById('map-tooltip');
     if (!tip) {
@@ -414,7 +383,6 @@ function hideTooltip() {
     if (tip) tip.style.display = 'none';
 }
 
-// ─── 5. Popup Modal ───────────────────────────────────────────────────────────
 function showPopup(atm) {
     const popup = document.getElementById('atm-popup');
     if (!popup) return;
@@ -435,7 +403,6 @@ function showPopup(atm) {
         badge.className    = `status-badge ${statusCls}`;
     }
 
-    // Cash bar
     const bar = document.getElementById('popup-cash-bar');
     if (bar) {
         bar.style.width      = Math.min(atm.cashLevel, 100) + '%';
@@ -445,7 +412,6 @@ function showPopup(atm) {
     popup.classList.remove('hidden');
     popup.classList.add('flex');
 
-    // Close on overlay click
     popup.addEventListener('click', e => {
         if (e.target === popup) hidePopup();
     }, { once: true });
@@ -458,11 +424,9 @@ function hidePopup() {
     popup.classList.remove('flex');
 }
 
-// ─── Util ─────────────────────────────────────────────────────────────────────
 function set(id, val)     { const el = document.getElementById(id); if (el) el.textContent = val; }
 function setText(id, val) { set(id, val); }
 
-// ─── Simulation Clock ────────────────────────────────────────────────────────
 function updateClock() {
     const now = new Date();
     const t   = [now.getHours(), now.getMinutes(), now.getSeconds()]
@@ -472,7 +436,6 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// ─── Sidebar Toggle ───────────────────────────────────────────────────────────
 const sidebarToggle = document.getElementById('sidebar-toggle');
 const desktopSidebar = document.getElementById('desktop-sidebar');
 const layoutWrapper  = document.getElementById('layout-wrapper');
@@ -483,9 +446,6 @@ if (sidebarToggle && desktopSidebar && layoutWrapper) {
     });
 }
 
-
-
-// ─── Run Optimization Button ─────────────────────────────────────────────────
 const runBtn = document.getElementById('run-optimization-btn');
 if (runBtn) {
     runBtn.addEventListener('click', async () => {
@@ -497,7 +457,6 @@ if (runBtn) {
     });
 }
 
-// ─── Dispatch Mode Toggle ─────────────────────────────────────────────────
 const dispatchToggle = document.getElementById('dispatch-mode-toggle');
 const dispatchLabel  = document.getElementById('dispatch-mode-label');
 if (dispatchToggle) {
@@ -512,14 +471,12 @@ if (dispatchToggle) {
             else              stopRingAnimation(canvas);
         }
 
-        // Re-highlight rows in the dispatch table
         document.querySelectorAll('#dispatch-tbody tr[data-atm-id]').forEach(row => {
             row.classList.toggle('dispatch-row-selected', dispatchMode);
         });
     });
 }
 
-// ─── Truck Bar Renderer ───────────────────────────────────────────────────────
 function renderTruckBar() {
     if (!knapsackStats) return;
     const { selectedItems, totalLoad, truckCapacityRupees } = knapsackStats;
@@ -534,10 +491,8 @@ function renderTruckBar() {
 
     if (!fill) return;
 
-    // Animate bar fill after short delay so CSS transition plays
     setTimeout(() => { fill.style.width = pct + '%'; }, 80);
 
-    // Build per-ATM color blocks
     const totalWeight = selectedItems.reduce((s, it) => s + it.weight, 0);
     fill.innerHTML = selectedItems.map(it => {
         const blockPct = totalWeight > 0 ? (it.weight / totalWeight) * 100 : 0;
@@ -548,7 +503,6 @@ function renderTruckBar() {
                      data-tip="${tip}"></div>`;
     }).join('');
 
-    // ── JS-driven tooltip (body-appended, escapes overflow:hidden) ──
     let tip = document.getElementById('truck-tooltip');
     if (!tip) {
         tip = document.createElement('div');
@@ -572,7 +526,6 @@ function renderTruckBar() {
     });
 }
 
-// ─── Dispatch Table Renderer ──────────────────────────────────────────────────
 function renderDispatchTable() {
     const tbody       = document.getElementById('dispatch-tbody');
     const tfoot       = document.getElementById('dispatch-tfoot');
@@ -611,23 +564,20 @@ function renderDispatchTable() {
     if (tfoot)       tfoot.classList.remove('hidden');
 }
 
-// ─── Fleet Cash Health — Cash Level Distribution ──────────────────────────────
 function renderCashDistribution() {
     const chart      = document.getElementById('cash-dist-chart');
     const avgEl      = document.getElementById('stat-avg-cash');
     const lowCashEl  = document.getElementById('stat-low-cash');
     if (!chart || !atmData.length) return;
 
-    // Define 5 buckets: label, range [min, max), color
     const buckets = [
-        { label: '0–10%',   min: 0,  max: 10,  color: '#EF4444' },  // red — critical
-        { label: '10–25%',  min: 10, max: 25,  color: '#FACC15' },  // yellow — low
-        { label: '25–50%',  min: 25, max: 50,  color: '#60A5FA' },  // blue — medium
-        { label: '50–75%',  min: 50, max: 75,  color: '#a78bfa' },  // purple
-        { label: '75–100%', min: 75, max: 101, color: '#4ADE80' },  // green — healthy
+        { label: '0–10%',   min: 0,  max: 10,  color: '#EF4444' },
+        { label: '10–25%',  min: 10, max: 25,  color: '#FACC15' },
+        { label: '25–50%',  min: 25, max: 50,  color: '#60A5FA' },
+        { label: '50–75%',  min: 50, max: 75,  color: '#a78bfa' },
+        { label: '75–100%', min: 75, max: 101, color: '#4ADE80' },
     ];
 
-    // Count ATMs per bucket (cap cashLevel at 100 for display)
     buckets.forEach(b => {
         b.count = atmData.filter(a => {
             const cl = Math.min(a.cashLevel, 100);
@@ -637,13 +587,11 @@ function renderCashDistribution() {
 
     const maxCount = Math.max(...buckets.map(b => b.count), 1);
 
-    // Stats
     const avgCash  = atmData.reduce((s, a) => s + Math.min(a.cashLevel, 100), 0) / atmData.length;
     const lowCount = atmData.filter(a => a.cashLevel < 25).length;
     if (avgEl)     avgEl.textContent     = avgCash.toFixed(1) + '%';
     if (lowCashEl) lowCashEl.textContent = lowCount + ' ATMs';
 
-    // Build bar markup
     chart.innerHTML = buckets.map(b => {
         const heightPct = ((b.count / maxCount) * 100).toFixed(1);
         const tip       = `${b.label}: ${b.count} ATM${b.count !== 1 ? 's' : ''}`;
@@ -659,7 +607,6 @@ function renderCashDistribution() {
         </div>`;
     }).join('');
 
-    // Animate bars (height 0 → target) after paint
     requestAnimationFrame(() => {
         chart.querySelectorAll('.cash-dist-bar').forEach(bar => {
             setTimeout(() => {
@@ -669,7 +616,6 @@ function renderCashDistribution() {
         });
     });
 
-    // JS tooltip (reuse truck-tooltip pattern)
     let tip = document.getElementById('truck-tooltip');
     chart.querySelectorAll('.cash-dist-bar').forEach(bar => {
         bar.addEventListener('mouseenter', () => {
@@ -684,5 +630,4 @@ function renderCashDistribution() {
     });
 }
 
-// ─── Boot ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', loadATMData);

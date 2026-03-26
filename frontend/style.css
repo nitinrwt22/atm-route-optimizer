@@ -1,4 +1,4 @@
-/* ─── CSS Custom Properties (Dark Theme — default and only) ─────────────── */
+
 :root {
     --surface: #131313;
     --outline: #849495;
@@ -49,20 +49,17 @@
     --on-surface: #e5e2e1;
 }
 
-/* ─── Material Symbols ──────────────────────────────────────────────────── */
 .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 html { scroll-behavior: smooth; }
 
-/* ─── Page Background ───────────────────────────────────────────────────── */
 body {
     background: radial-gradient(circle at top right, var(--surface-container-low), var(--surface));
     min-height: max(884px, 100dvh);
 }
 
-/* ─── Sidebar Active State ───────────────────────────────────────────────── */
 .nav-active {
     color: var(--primary-container) !important;
     background: color-mix(in srgb, var(--primary-container) 10%, transparent) !important;
@@ -70,14 +67,12 @@ body {
     box-shadow: inset -10px 0 15px rgba(0, 242, 255, 0.05);
 }
 
-/* ─── Glassmorphism Panel ───────────────────────────────────────────────── */
 .glass-panel {
     background: color-mix(in srgb, var(--surface) 60%, transparent);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid color-mix(in srgb, var(--primary-container) 10%, transparent);
 }
 
-/* ─── ATM Map Canvas ────────────────────────────────────────────────────── */
 .atm-map-canvas {
     position: absolute;
     inset: 0;
@@ -88,7 +83,6 @@ body {
     display: block;
 }
 
-/* ─── Status Badges ─────────────────────────────────────────────────────── */
 .status-badge {
     display: inline-block;
     padding: 2px 8px;
@@ -121,11 +115,9 @@ body {
     border: 1px solid rgba(74, 222, 128, 0.3);
 }
 
-/* ─── Urgent List Scrollbar Hide ────────────────────────────────────────── */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ─── Pulse Animations ──────────────────────────────────────────────────── */
 .pulse-glow-red {
     box-shadow: 0 0 15px #c20014;
     animation: pulse-red 2s infinite;
@@ -137,7 +129,6 @@ body {
     100% { transform: scale(0.95); opacity: 0.7; }
 }
 
-/* ─── Map Tooltip ────────────────────────────────────────────────────────── */
 .map-tooltip {
     position: fixed;
     z-index: 9999;
@@ -159,7 +150,6 @@ body {
     font-size: 10px;
 }
 
-/* ─── Popup Modal Card ────────────────────────────────────────────────────── */
 .popup-card {
     background: color-mix(in srgb, var(--surface-container-low) 92%, transparent);
     backdrop-filter: blur(24px);
@@ -173,7 +163,6 @@ body {
     to   { transform: scale(1);    opacity: 1; }
 }
 
-/* ─── Popup Info Cells ───────────────────────────────────────────────────── */
 .info-cell {
     background: var(--surface-container-high);
     border-radius: 12px;
@@ -193,7 +182,6 @@ body {
     color: var(--on-surface);
 }
 
-/* ─── Truck Load Bar ─────────────────────────────────────────────────────── */
 .truck-bar-track {
     position: relative;
     width: 100%;
@@ -216,7 +204,6 @@ body {
     overflow: hidden;
 }
 
-/* shimmer sweep */
 .truck-bar-fill::after {
     content: '';
     position: absolute;
@@ -244,7 +231,6 @@ body {
     z-index: 2;
 }
 
-/* JS-driven truck tooltip (appended to body, escapes overflow:hidden) */
 .truck-tooltip {
     position: fixed;
     z-index: 9999;
@@ -262,7 +248,6 @@ body {
     display: none;
 }
 
-/* ─── Dispatch Table ─────────────────────────────────────────────────────── */
 .dispatch-table {
     border-collapse: collapse;
     font-size: 12px;
@@ -315,14 +300,12 @@ body {
     font-size: 12px;
 }
 
-/* ─── Knapsack Map Ring Pulse ────────────────────────────────────────────── */
 @keyframes ring-pulse {
     0%   { transform: scale(1);   opacity: 0.9; }
     50%  { transform: scale(1.5); opacity: 0.3; }
     100% { transform: scale(1);   opacity: 0.9; }
 }
 
-/* Dispatch mode toggle — active state */
 #dispatch-mode-toggle.active {
     background: color-mix(in srgb, var(--primary-container) 10%, transparent);
     border-color: var(--primary-container);

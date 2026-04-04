@@ -19,6 +19,7 @@ struct ATM {
   int id;
   string name;
   string location;
+  double x, y;
   double cashLevel;
   double dailyWithdrawalRate;
   int daysSinceRefill;
@@ -41,6 +42,8 @@ bool parseLine(const string &line, ATM &atm) {
   atm.id = stoi(fields[0]);
   atm.name = fields[1];
   atm.location = fields[2];
+  atm.x = stod(fields[3]);
+  atm.y = stod(fields[4]);
 
   atm.cashLevel = stod(fields[5]);
   atm.dailyWithdrawalRate = stod(fields[6]);
@@ -139,6 +142,24 @@ void saveOutput(const vector<ATM> &atms, const vector<int> &selected,
   out << "Total Urgency : " << totalValue << "\n";
   out.close();
   cout << "\n[FILE] Results saved to 'knapsack_output.txt'\n";
+
+  ofstream jsonOut("selected_atms.json");
+  if (jsonOut.is_open()) {
+    jsonOut << "[\n";
+    for (size_t i = 0; i < selected.size(); i++) {
+        const ATM& a = atms[selected[i]];
+        jsonOut << "  { \"id\": " << a.id 
+                << ", \"name\": \"" << a.name 
+                << "\", \"x\": " << a.x 
+                << ", \"y\": " << a.y 
+                << ", \"urgency score\": " << a.value << " }";
+        if (i < selected.size() - 1) jsonOut << ",";
+        jsonOut << "\n";
+    }
+    jsonOut << "]\n";
+    jsonOut.close();
+    cout << "[FILE] Results successfully exported to 'selected_atms.json'\n";
+  }
 }
 
 int main() {

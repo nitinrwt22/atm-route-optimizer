@@ -1,10 +1,10 @@
 Selected ATMs for Truck Dispatch
 ========================================
-ATM_021 | Kamla Nagar | Refill: ₹937100 | TimeLeft: 558.47 hrs
-ATM_065 | Sonia Vihar | Refill: ₹962100 | TimeLeft: 526.60 hrs
-ATM_016 | Punjabi Bagh | Refill: ₹896500 | TimeLeft: 504.38 hrs
-ATM_086 | Shyam Basti | Refill: ₹985400 | TimeLeft: 238.29 hrs
-ATM_007 | Pitampura | Refill: ₹977000 | TimeLeft: 111.17 hrs
+ATM_003 | Karol Bagh | Refill: ₹997700 | TimeLeft: 0.60 hrs
+ATM_001 | Connaught Place | Refill: ₹998400 | TimeLeft: 0.42 hrs
+ATM_012 | Uttam Nagar | Refill: ₹998800 | TimeLeft: 0.34 hrs
+ATM_004 | Saket | Refill: ₹999100 | TimeLeft: 0.27 hrs
+ATM_005 | Dwarka Sector 10 | Refill: ₹999200 | TimeLeft: 0.22 hrs
 ----------------------------------------
-Total Load    : ₹47.58 lakh
-Total Urgency : 15
+Total Load    : ₹49.93 lakh
+Total Urgency : 15235

@@ -3,6 +3,7 @@
 'use strict';
 
 let atmData = [];
+let routeData = null;
 
 const ATM_CAPACITY   = 1_000_000;
 const TRUCK_CAPACITY = 5000;
@@ -42,6 +43,20 @@ async function loadATMData() {
             ...a,
             status: a.status || getStatus(a.timeToEmpty),
         }));
+        
+        try {
+            const routeResp = await fetch('/backend/route.json');
+            if (routeResp.ok) {
+                const routeJson = await routeResp.json();
+                routeData = routeJson.route || [];
+            } else {
+                routeData = null;
+            }
+        } catch (err) {
+            console.warn('[ROUTE] Could not load route.json:', err.message);
+            routeData = null;
+        }
+
         renderAll();
     } catch (err) {
         console.error('[ATM] Could not load output.json:', err.message);
@@ -278,6 +293,69 @@ function startRingAnimation(canvas) {
     };
     _ringAnim = requestAnimationFrame(step);
 }
+
+function renderRoutePath(canvas, ctx) {
+    if (!routeData || routeData.length === 0) return;
+
+    ctx.save();
+    ctx.beginPath();
+    
+    // Depot coordinates (0, 0)
+    const depot = { x: 0, y: 0 };
+    const { cx: startCx, cy: startCy } = atmToCanvas(depot, canvas);
+    
+    ctx.moveTo(startCx, startCy);
+    
+    const points = [{cx: startCx, cy: startCy, isDepot: true}];
+    for (const stop of routeData) {
+        const { cx, cy } = atmToCanvas(stop, canvas);
+        ctx.lineTo(cx, cy);
+        points.push({cx, cy, id: stop.id});
+    }
+
+    ctx.strokeStyle = '#00f2ff';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#00f2ff';
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+    
+    ctx.restore();
+
+    drawRouteNumbers(ctx, points);
+}
+
+function drawRouteNumbers(ctx, points) {
+    ctx.save();
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    
+    for (let i = 1; i < points.length; i++) {
+        const pt = points[i];
+        
+        ctx.fillStyle = "#1e293b";
+        ctx.beginPath();
+        ctx.arc(pt.cx + 10, pt.cy - 10, 8, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#00f2ff";
+        ctx.stroke();
+        
+        ctx.fillStyle = "#00f2ff";
+        ctx.fillText(i, pt.cx + 10, pt.cy - 10);
+    }
+    
+    const depotPt = points[0];
+    ctx.fillStyle = "#00f2ff";
+    ctx.beginPath();
+    ctx.arc(depotPt.cx, depotPt.cy, 8, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = "#000000";
+    ctx.fillText("D", depotPt.cx, depotPt.cy);
+    
+    ctx.restore();
+}
+
 function stopRingAnimation(canvas) {
     if (_ringAnim) { cancelAnimationFrame(_ringAnim); _ringAnim = null; }
     draw(canvas);
@@ -286,6 +364,10 @@ function stopRingAnimation(canvas) {
 function draw(canvas) {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (routeData && routeData.length > 0) {
+        renderRoutePath(canvas, ctx);
+    }
 
     atmData.forEach(atm => {
         const { cx, cy } = atmToCanvas(atm, canvas);

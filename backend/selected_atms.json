@@ -1,4 +1,7 @@
 [
-  { "id": 12, "name": "ATM A", "x": 34.0, "y": 67.0, "urgency score": 100 },
-  { "id": 5, "name": "ATM B", "x": 40.0, "y": 80.0, "urgency": 50 }
+  { "id": 3, "name": "ATM_003", "x": 10.71, "y": 81.55, "urgency score": 1666 },
+  { "id": 1, "name": "ATM_001", "x": 0.03, "y": 52.46, "urgency score": 2380 },
+  { "id": 12, "name": "ATM_012", "x": 99.33, "y": 43.37, "urgency score": 2941 },
+  { "id": 4, "name": "ATM_004", "x": 24.74, "y": 18.83, "urgency score": 3703 },
+  { "id": 5, "name": "ATM_005", "x": 53.44, "y": 84.45, "urgency score": 4545 }
 ]

@@ -1,0 +1,4 @@
+[
+  { "id": 12, "name": "ATM A", "x": 34.0, "y": 67.0, "urgency score": 100 },
+  { "id": 5, "name": "ATM B", "x": 40.0, "y": 80.0, "urgency": 50 }
+]

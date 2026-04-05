@@ -147,10 +147,16 @@
                             <p class="text-xs text-on-surface-variant">Monitoring <span id="map-stat-total">100</span>
                                 Endpoints</p>
                         </div>
-                        <button onclick="loadATMData ? loadATMData() : null"
-                            class="glass-panel p-3 rounded-xl pointer-events-auto hover:bg-surface-container-highest transition-colors">
-                            <span class="material-symbols-outlined text-on-surface" data-icon="refresh">refresh</span>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button id="route-toggle-btn" class="glass-panel p-3 rounded-xl pointer-events-auto hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+                                <span class="material-symbols-outlined text-on-surface text-sm" id="route-toggle-icon">route</span>
+                                <span id="route-toggle-label" class="text-[10px] uppercase font-bold tracking-widest text-primary-container hidden md:inline">2-Opt: ON</span>
+                            </button>
+                            <button onclick="loadATMData ? loadATMData() : null"
+                                class="glass-panel p-3 rounded-xl pointer-events-auto hover:bg-surface-container-highest transition-colors">
+                                <span class="material-symbols-outlined text-on-surface" data-icon="refresh">refresh</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="glass-panel p-3 rounded-xl pointer-events-auto self-end flex flex-col gap-1.5">

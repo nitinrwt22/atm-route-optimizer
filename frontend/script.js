@@ -4,6 +4,8 @@
 
 let atmData = [];
 let routeData = null;
+let optimizedRouteData = null;
+let showOptimizedRoute = true;
 
 const ATM_CAPACITY   = 1_000_000;
 const TRUCK_CAPACITY = 5000;
@@ -55,6 +57,19 @@ async function loadATMData() {
         } catch (err) {
             console.warn('[ROUTE] Could not load route.json:', err.message);
             routeData = null;
+        }
+
+        try {
+            const optResp = await fetch('/backend/optimized_route.json');
+            if (optResp.ok) {
+                const optJson = await optResp.json();
+                optimizedRouteData = optJson.route || [];
+            } else {
+                optimizedRouteData = null;
+            }
+        } catch (err) {
+            console.warn('[ROUTE] Could not load optimized_route.json:', err.message);
+            optimizedRouteData = null;
         }
 
         renderAll();
@@ -274,8 +289,7 @@ function renderMapMarkers() {
 }
 
 function atmToCanvas(atm, canvas) {
-
-    const pad = 0.08;
+    const pad = 0.15; // Increased padding from 0.08 so the depot (0,0) moves away from the top-left corner UI panels
     const cx  = (pad + (atm.x / 100) * (1 - 2 * pad)) * canvas.width;
     const cy  = (pad + (atm.y / 100) * (1 - 2 * pad)) * canvas.height;
     return { cx, cy };
@@ -294,8 +308,8 @@ function startRingAnimation(canvas) {
     _ringAnim = requestAnimationFrame(step);
 }
 
-function renderRoutePath(canvas, ctx) {
-    if (!routeData || routeData.length === 0) return;
+function renderRoutePath(canvas, ctx, routeArr, color, isDashed, drawIds) {
+    if (!routeArr || routeArr.length === 0) return;
 
     ctx.save();
     ctx.beginPath();
@@ -306,22 +320,29 @@ function renderRoutePath(canvas, ctx) {
     
     ctx.moveTo(startCx, startCy);
     
+    if (isDashed) {
+        ctx.setLineDash([5, 5]);
+        ctx.globalAlpha = 0.5;
+        ctx.lineWidth = 1.5;
+    } else {
+        ctx.lineWidth = 2;
+    }
+    
     const points = [{cx: startCx, cy: startCy, isDepot: true}];
-    for (const stop of routeData) {
+    for (const stop of routeArr) {
         const { cx, cy } = atmToCanvas(stop, canvas);
         ctx.lineTo(cx, cy);
         points.push({cx, cy, id: stop.id});
     }
 
-    ctx.strokeStyle = '#00f2ff';
-    ctx.lineWidth = 2;
-    ctx.shadowColor = '#00f2ff';
-    ctx.shadowBlur = 10;
+    ctx.strokeStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = isDashed ? 0 : 10;
     ctx.stroke();
     
     ctx.restore();
 
-    drawRouteNumbers(ctx, points);
+    if (drawIds) drawRouteNumbers(ctx, points);
 }
 
 function drawRouteNumbers(ctx, points) {
@@ -366,7 +387,13 @@ function draw(canvas) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (routeData && routeData.length > 0) {
-        renderRoutePath(canvas, ctx);
+        if (showOptimizedRoute && optimizedRouteData && optimizedRouteData.length > 0) {
+            // Draw optimized route in solid cyan
+            renderRoutePath(canvas, ctx, optimizedRouteData, '#00f2ff', false, true);
+        } else {
+            // Draw original nearest neighbor route in solid orange
+            renderRoutePath(canvas, ctx, routeData, '#f97316', false, true);
+        }
     }
 
     atmData.forEach(atm => {
@@ -709,6 +736,26 @@ function renderCashDistribution() {
         bar.addEventListener('mouseleave', () => {
             if (tip) tip.style.display = 'none';
         });
+    });
+}
+
+const routeToggleBtn = document.getElementById('route-toggle-btn');
+const routeToggleLabel = document.getElementById('route-toggle-label');
+const routeToggleIcon = document.getElementById('route-toggle-icon');
+
+if (routeToggleBtn) {
+    routeToggleBtn.addEventListener('click', () => {
+        showOptimizedRoute = !showOptimizedRoute;
+        if (routeToggleLabel) {
+            routeToggleLabel.textContent = showOptimizedRoute ? '2-Opt: ON' : 'Nearest: ON';
+            routeToggleLabel.className = `text-[10px] uppercase font-bold tracking-widest hidden md:inline ${showOptimizedRoute ? 'text-primary-container' : 'text-orange-400'}`;
+        }
+        if (routeToggleIcon) {
+            routeToggleIcon.className = `material-symbols-outlined text-sm ${showOptimizedRoute ? 'text-on-surface' : 'text-orange-400'}`;
+        }
+        
+        const canvas = document.getElementById('atm-map-canvas');
+        if (canvas) draw(canvas);
     });
 }
 

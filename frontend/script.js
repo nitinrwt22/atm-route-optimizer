@@ -6,6 +6,15 @@ let atmData = [];
 let routeData = null;
 let optimizedRouteData = null;
 let showOptimizedRoute = true;
+let clusterData = null;
+let clusterCentroids = null;
+let clusterModeActive = false;
+
+const CLUSTER_COLORS = {
+    0: '#3B82F6', // Blue for Truck 1
+    1: '#10B981', // Green for Truck 2
+    2: '#A855F7'  // Purple for Truck 3
+};
 
 const ATM_CAPACITY   = 1_000_000;
 const TRUCK_CAPACITY = 5000;
@@ -70,6 +79,29 @@ async function loadATMData() {
         } catch (err) {
             console.warn('[ROUTE] Could not load optimized_route.json:', err.message);
             optimizedRouteData = null;
+        }
+
+        try {
+            const clusterResp = await fetch('/backend/clusters.json');
+            if (clusterResp.ok) {
+                const clusterJson = await clusterResp.json();
+                clusterData = clusterJson.clusters || [];
+                clusterCentroids = clusterJson.centroids || [];
+                
+                // Map cluster data to atmData for quick lookup
+                const clusterMap = new Map();
+                clusterData.forEach(c => clusterMap.set(c.id, c.cluster));
+                atmData.forEach(atm => {
+                    atm.cluster = clusterMap.has(atm.id) ? clusterMap.get(atm.id) : -1;
+                });
+            } else {
+                clusterData = null;
+                clusterCentroids = null;
+            }
+        } catch (err) {
+            console.warn('[CLUSTER] Could not load clusters.json:', err.message);
+            clusterData = null;
+            clusterCentroids = null;
         }
 
         renderAll();
@@ -398,7 +430,12 @@ function draw(canvas) {
 
     atmData.forEach(atm => {
         const { cx, cy } = atmToCanvas(atm, canvas);
-        const color      = STATUS_COLOR[atm.status] || '#4ADE80';
+        let color = STATUS_COLOR[atm.status] || '#4ADE80';
+        
+        if (clusterModeActive && atm.cluster !== undefined && atm.cluster >= 0) {
+            color = CLUSTER_COLORS[atm.cluster] || color;
+        }
+
         const isHovered  = hoveredAtm && hoveredAtm.id === atm.id;
         const isSelected = knapsackSelected.has(atm.id);
 
@@ -455,6 +492,42 @@ function draw(canvas) {
         ctx.shadowBlur  = 0;
         ctx.globalAlpha = 1;
     });
+
+    if (clusterModeActive && clusterCentroids) {
+        clusterCentroids.forEach((centroid, i) => {
+            const { cx, cy } = atmToCanvas(centroid, canvas);
+            const color = CLUSTER_COLORS[centroid.cluster] || '#FFFFFF';
+            
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 15;
+            
+            ctx.beginPath();
+            ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.stroke();
+            
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Draw label background
+            const label = `Truck ${i + 1}`;
+            const textWidth = ctx.measureText(label).width;
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.beginPath();
+            ctx.roundRect(cx - textWidth/2 - 4, cy - 30, textWidth + 8, 16, 4);
+            ctx.fill();
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(label, cx, cy - 22);
+        });
+    }
 }
 
 function findAtmAt(canvas, mx, my) {
@@ -752,6 +825,38 @@ if (routeToggleBtn) {
         }
         if (routeToggleIcon) {
             routeToggleIcon.className = `material-symbols-outlined text-sm ${showOptimizedRoute ? 'text-on-surface' : 'text-orange-400'}`;
+        }
+        
+        const canvas = document.getElementById('atm-map-canvas');
+        if (canvas) draw(canvas);
+    });
+}
+
+const clusterToggleBtn = document.getElementById('cluster-toggle-btn');
+const clusterToggleLabel = document.getElementById('cluster-toggle-label');
+const clusterToggleIcon = document.getElementById('cluster-toggle-icon');
+const urgencyLegend = document.getElementById('urgency-legend');
+const clusterLegend = document.getElementById('cluster-legend');
+
+if (clusterToggleBtn) {
+    clusterToggleBtn.addEventListener('click', () => {
+        clusterModeActive = !clusterModeActive;
+        if (clusterToggleLabel) {
+            clusterToggleLabel.textContent = clusterModeActive ? 'Clusters: ON' : 'Clusters: OFF';
+            clusterToggleLabel.className = `text-[10px] uppercase font-bold tracking-widest hidden md:inline ${clusterModeActive ? 'text-primary-container' : 'text-on-surface-variant'}`;
+        }
+        if (clusterToggleIcon) {
+            clusterToggleIcon.className = `material-symbols-outlined text-sm ${clusterModeActive ? 'text-primary-container' : 'text-on-surface'}`;
+        }
+        
+        if (urgencyLegend && clusterLegend) {
+            if (clusterModeActive) {
+                urgencyLegend.classList.add('hidden');
+                clusterLegend.classList.remove('hidden');
+            } else {
+                urgencyLegend.classList.remove('hidden');
+                clusterLegend.classList.add('hidden');
+            }
         }
         
         const canvas = document.getElementById('atm-map-canvas');

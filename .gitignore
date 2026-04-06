@@ -23,3 +23,7 @@ output.json
 .idea/
 *.swp
 *.swo
+
+# Backend runner
+2opt_runner
+test_route.json

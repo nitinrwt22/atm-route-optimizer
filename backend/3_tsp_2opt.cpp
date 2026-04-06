@@ -131,8 +131,11 @@ void writeOptimizedJSON(const string& filename, const vector<Point>& route, doub
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     string inputFile = "route.json";
+    if (argc > 1) {
+        inputFile = argv[1];
+    }
     vector<Point> route = parseJSON(inputFile);
     
     if (route.empty()) {

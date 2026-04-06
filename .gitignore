@@ -27,3 +27,5 @@ output.json
 # Backend runner
 2opt_runner
 test_route.json
+kmeans_runner
+clusters.json

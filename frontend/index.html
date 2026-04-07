@@ -339,6 +339,98 @@
                 </div>
             </div>
 
+            <!-- Optimization Insights Section -->
+            <section id="optimization-insights" class="space-y-6 pt-4 pb-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-1">Performance Overview</p>
+                        <h2 class="font-headline text-2xl font-bold text-on-surface">✨ Optimization Insights</h2>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Route Optimization Performance -->
+                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col justify-between group hover:border-primary-container/30 transition-colors">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Route Optimization</h3>
+                            <span class="material-symbols-outlined text-primary-container" data-icon="route">route</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-end">
+                                <p class="text-[10px] uppercase font-bold text-on-surface-variant">Nearest Neighbor</p>
+                                <p id="insight-route-nn" class="text-sm font-bold text-on-surface">—</p>
+                            </div>
+                            <div class="flex justify-between items-end">
+                                <p class="text-[10px] uppercase font-bold text-primary-container">2-Opt Optimized</p>
+                                <p id="insight-route-opt" class="text-lg font-bold text-primary-fixed-dim leading-none">—</p>
+                            </div>
+                            <div class="mt-2 pt-2 border-t border-outline-variant/10 flex justify-between items-center">
+                                <span class="text-[10px] uppercase font-bold text-on-surface-variant">Improvement</span>
+                                <span id="insight-route-imp" class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-green-500/20 text-green-400 border border-green-500/30">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capacity Utilization -->
+                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col justify-between group hover:border-secondary-container/30 transition-colors">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Capacity Used</h3>
+                            <span class="material-symbols-outlined text-secondary-container" data-icon="inventory_2">inventory_2</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <p id="insight-capacity-text" class="text-lg font-bold text-secondary-fixed-dim leading-none">—</p>
+                                <p class="text-[10px] uppercase font-bold text-on-surface-variant mt-1">Truck Load</p>
+                            </div>
+                            <div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+                                <div id="insight-capacity-bar" class="h-full rounded-full transition-all duration-1000" style="width: 0%; background: linear-gradient(90deg, var(--on-secondary-container), var(--secondary-container));"></div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] uppercase font-bold text-on-surface-variant">Utilization</span>
+                                <span id="insight-capacity-pct" class="text-sm font-bold text-on-surface">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cluster Distribution -->
+                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col justify-between group hover:border-blue-400/30 transition-colors">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Cluster Zones</h3>
+                            <span class="material-symbols-outlined text-blue-400" data-icon="hub">hub</span>
+                        </div>
+                        <div id="insight-clusters-container" class="space-y-3">
+                            <div class="flex items-center justify-center h-full text-on-surface-variant text-xs opacity-50">Loading clusters…</div>
+                        </div>
+                    </div>
+
+                    <!-- Urgency Distribution Summary -->
+                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col justify-between group hover:border-red-400/30 transition-colors">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Urgency Summary</h3>
+                            <span class="material-symbols-outlined text-red-400" data-icon="notifications_active">notifications_active</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between group/row">
+                                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="text-[10px] uppercase font-bold text-on-surface-variant group-hover/row:text-red-400 transition-colors">Critical</span></div>
+                                <span id="insight-urgency-critical" class="text-sm font-bold text-on-surface">—</span>
+                            </div>
+                            <div class="flex items-center justify-between group/row">
+                                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-yellow-400"></span><span class="text-[10px] uppercase font-bold text-on-surface-variant group-hover/row:text-yellow-400 transition-colors">High</span></div>
+                                <span id="insight-urgency-high" class="text-sm font-bold text-on-surface">—</span>
+                            </div>
+                            <div class="flex items-center justify-between group/row">
+                                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-400"></span><span class="text-[10px] uppercase font-bold text-on-surface-variant group-hover/row:text-blue-400 transition-colors">Medium</span></div>
+                                <span id="insight-urgency-medium" class="text-sm font-bold text-on-surface">—</span>
+                            </div>
+                            <div class="flex items-center justify-between group/row">
+                                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="text-[10px] uppercase font-bold text-on-surface-variant group-hover/row:text-green-400 transition-colors">Low</span></div>
+                                <span id="insight-urgency-low" class="text-sm font-bold text-on-surface">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <section id="knapsack-section" class="space-y-6 pb-8">
 
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">

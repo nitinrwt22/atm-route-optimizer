@@ -125,6 +125,7 @@ function renderAll() {
     renderTruckBar();
     renderDispatchTable();
     renderCashDistribution();
+    renderOptimizationInsights();
 }
 
 function computeKnapsack() {
@@ -859,9 +860,91 @@ if (clusterToggleBtn) {
             }
         }
         
-        const canvas = document.getElementById('atm-map-canvas');
         if (canvas) draw(canvas);
     });
+}
+
+function calculateRouteDistance(r) {
+    if (!r || r.length < 2) return 0;
+    let dist = 0;
+    for (let i = 0; i < r.length - 1; i++) {
+        dist += Math.sqrt(Math.pow(r[i].x - r[i + 1].x, 2) + Math.pow(r[i].y - r[i + 1].y, 2));
+    }
+    return dist;
+}
+
+function renderOptimizationInsights() {
+    // 1. Route Optimization Performance
+    if (routeData && routeData.length >= 2) {
+        const nnDist = calculateRouteDistance(routeData);
+        let optDist = nnDist;
+        if (optimizedRouteData) {
+            optDist = optimizedRouteData.totalDistance || calculateRouteDistance(optimizedRouteData);
+        }
+        const imp = nnDist > 0 ? ((nnDist - optDist) / nnDist) * 100 : 0;
+        
+        set('insight-route-nn', nnDist.toFixed(1) + ' km');
+        set('insight-route-opt', optDist.toFixed(1) + ' km');
+        set('insight-route-imp', imp.toFixed(1) + '%');
+    }
+
+    // 2. Capacity Utilization
+    if (knapsackStats) {
+        const { totalLoad, truckCapacityRupees } = knapsackStats;
+        const totalLoadLakhs = totalLoad / 100_000;
+        const maxLakhs = truckCapacityRupees / 100_000;
+        const pct = Math.min((totalLoad / truckCapacityRupees) * 100, 100);
+        
+        set('insight-capacity-text', `₹${totalLoadLakhs.toFixed(1)}L / ₹${maxLakhs.toFixed(0)}L`);
+        set('insight-capacity-pct', `${pct.toFixed(1)}%`);
+        
+        const capBar = document.getElementById('insight-capacity-bar');
+        if (capBar) {
+            setTimeout(() => { capBar.style.width = pct + '%'; }, 100);
+        }
+    }
+
+    // 3. Cluster Distribution
+    const clustersContainer = document.getElementById('insight-clusters-container');
+    if (clustersContainer && clusterData && clusterData.length > 0) {
+        const counts = {};
+        let totalAssigned = 0;
+        clusterData.forEach(c => {
+            counts[c.cluster] = (counts[c.cluster] || 0) + 1;
+            totalAssigned++;
+        });
+        
+        // Convert to array and sort by cluster ID
+        const clusterKeys = Object.keys(counts).map(Number).sort((a,b)=>a-b);
+        
+        clustersContainer.innerHTML = clusterKeys.map((k, idx) => {
+            const count = counts[k];
+            const color = CLUSTER_COLORS[k] || '#FFFFFF';
+            const truckNum = idx + 1;
+            return `
+                <div class="flex items-center justify-between group/row">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded box-border" style="background-color: ${color}40; border: 1px solid ${color}; shadow: 0 0 5px ${color}"></span>
+                        <span class="text-[10px] uppercase font-bold text-on-surface-variant transition-colors" style="color: ${color}80">Truck ${truckNum} Zone</span>
+                    </div>
+                    <span class="text-sm font-bold text-on-surface">${count} ATMs</span>
+                </div>
+            `;
+        }).join('');
+    } else if (clustersContainer) {
+        clustersContainer.innerHTML = '<div class="text-[10px] text-on-surface-variant/50">Turn ON clusters to view zones</div>';
+    }
+
+    // 4. Urgency Distribution Summary
+    if (atmData && atmData.length > 0) {
+        const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+        atmData.forEach(a => counts[a.status]++);
+        
+        set('insight-urgency-critical', counts.CRITICAL);
+        set('insight-urgency-high', counts.HIGH);
+        set('insight-urgency-medium', counts.MEDIUM);
+        set('insight-urgency-low', counts.LOW);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', loadATMData);

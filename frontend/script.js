@@ -440,12 +440,26 @@ function draw(canvas) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (routeData && routeData.length > 0) {
-        if (showOptimizedRoute && optimizedRouteData && optimizedRouteData.length > 0) {
-            // Draw optimized route in solid cyan
-            renderRoutePath(canvas, ctx, optimizedRouteData, '#00f2ff', false, true);
-        } else {
-            // Draw original nearest neighbor route in solid orange
-            renderRoutePath(canvas, ctx, routeData, '#f97316', false, true);
+        const baseRoute = (showOptimizedRoute && optimizedRouteData && optimizedRouteData.length > 0) ? optimizedRouteData : routeData;
+        
+        let hasClusteredRoute = false;
+        const colors = ['#3B82F6', '#10B981', '#A855F7'];
+        
+        for (let i = 0; i < 3; i++) {
+            const clusterRoute = baseRoute.filter(stop => {
+                const atm = atmData.find(a => a.id === stop.id);
+                return atm && atm.cluster === i;
+            });
+            if (clusterRoute.length > 0) {
+                renderRoutePath(canvas, ctx, clusterRoute, colors[i], false, true);
+                hasClusteredRoute = true;
+            }
+        }
+        
+        // Fallback to single unified route if no clusters found
+        if (!hasClusteredRoute) {
+            const singleColor = showOptimizedRoute ? '#00f2ff' : '#f97316';
+            renderRoutePath(canvas, ctx, baseRoute, singleColor, false, true);
         }
     }
 
@@ -550,24 +564,67 @@ function draw(canvas) {
         });
     }
 
-    if (typeof truck !== 'undefined' && truck && truck.active) {
-        const { cx, cy } = atmToCanvas({x: truck.x, y: truck.y}, canvas);
-        ctx.shadowColor = '#00f2ff';
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.rect(cx - 12, cy - 8, 24, 16);
-        ctx.fillStyle = '#1e293b';
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#00f2ff';
-        ctx.stroke();
-        
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = '#00f2ff';
-        ctx.font = 'bold 8px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('TRK', cx, cy);
+    if (typeof trucks !== 'undefined' && trucks) {
+        trucks.forEach((t, idx) => {
+            if (t.active) {
+                const { cx, cy } = atmToCanvas({x: t.x, y: t.y}, canvas);
+                
+                let targetX = 0;
+                let targetY = 0;
+                if (t.route && t.currentRouteIndex < t.route.length) {
+                    targetX = t.route[t.currentRouteIndex].x || 0;
+                    targetY = t.route[t.currentRouteIndex].y || 0;
+                }
+                const { cx: tgtCx, cy: tgtCy } = atmToCanvas({x: targetX, y: targetY}, canvas);
+                
+                let angle = Math.atan2(tgtCy - cy, tgtCx - cx);
+                if (isNaN(angle)) angle = 0;
+                
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+                
+                // Draw Google Navigation Arrow 
+                ctx.shadowColor = t.color;
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.moveTo(12, 0);        
+                ctx.lineTo(-8, -8);       
+                ctx.lineTo(-4, 0);        
+                ctx.lineTo(-8, 8);        
+                ctx.closePath();
+                
+                ctx.fillStyle = t.color;
+                ctx.fill();
+                
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.stroke();
+                
+                ctx.restore();
+                
+                // Draw floating label upright
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 9px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                const tag = 'T' + (idx + 1);
+                const textW = ctx.measureText(tag).width;
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                ctx.beginPath();
+                if (ctx.roundRect) {
+                    ctx.roundRect(cx - textW/2 - 3, cy - 24, textW + 6, 14, 3);
+                } else {
+                    ctx.rect(cx - textW/2 - 3, cy - 24, textW + 6, 14);
+                }
+                ctx.fill();
+                
+                ctx.fillStyle = t.color;
+                ctx.fillText(tag, cx, cy - 17);
+            }
+        });
     }
 }
 
@@ -993,65 +1050,86 @@ let simulationSpeed = 1;
 let simulationInterval = null;
 let originalATMData = null;
 
-let truck = null;
+let trucks = [];
 let truckAnimFrame = null;
 
-function initializeTruck() {
-    truck = {
-        x: 0,
-        y: 0,
-        currentRouteIndex: 0,
-        active: false
-    };
+function initializeTrucks() {
+    trucks = [];
+    const colors = ['#3B82F6', '#10B981', '#A855F7'];
+    for (let i = 0; i < 3; i++) {
+        trucks.push({
+            id: i,
+            x: 0,
+            y: 0,
+            currentRouteIndex: 0,
+            active: false,
+            color: colors[i],
+            route: []
+        });
+    }
 }
 
-function updateTruckPosition() {
-    if (!truck || !truck.active) return;
-    
-    let route = [];
+function assignRoutesToTrucks() {
+    let baseRoute = [];
     if (showOptimizedRoute && optimizedRouteData && optimizedRouteData.length > 0) {
-        route = optimizedRouteData;
+        baseRoute = optimizedRouteData;
     } else if (routeData && routeData.length > 0) {
-        route = routeData;
-    } else {
-        return;
+        baseRoute = routeData;
     }
     
-    if (route.length === 0) return;
-    
-    let targetX = 0;
-    let targetY = 0;
-    let targetId = -1;
-    
-    if (truck.currentRouteIndex < route.length) {
-        targetX = route[truck.currentRouteIndex].x;
-        targetY = route[truck.currentRouteIndex].y;
-        targetId = route[truck.currentRouteIndex].id;
-    } else {
-        targetX = 0;
-        targetY = 0;
-        targetId = 0;
-    }
-    
-    const speedFactor = simulationSpeed * 0.05;
-    truck.x = truck.x + (targetX - truck.x) * speedFactor;
-    truck.y = truck.y + (targetY - truck.y) * speedFactor;
-    
-    checkArrival(targetX, targetY, targetId, route.length);
+    trucks.forEach((t, i) => {
+        t.route = baseRoute.filter(stop => {
+            const atm = atmData.find(a => a.id === stop.id);
+            return atm && atm.cluster === i;
+        }).map(stop => {
+            // Guard against backend changes where route arrays lack coordinates
+            if (stop.x !== undefined && stop.y !== undefined) return stop;
+            const atm = atmData.find(a => a.id === stop.id);
+            return { id: stop.id, x: atm.x, y: atm.y };
+        });
+    });
 }
 
-function checkArrival(tx, ty, tId, routeLen) {
-    const dist = Math.sqrt((tx - truck.x)**2 + (ty - truck.y)**2);
+function updateTruckPositions() {
+    trucks.forEach(t => {
+        if (!t.active || !t.route || t.route.length === 0) return;
+        
+        let targetX = 0;
+        let targetY = 0;
+        let targetId = -1;
+        
+        if (t.currentRouteIndex < t.route.length) {
+            targetX = t.route[t.currentRouteIndex].x || 0;
+            targetY = t.route[t.currentRouteIndex].y || 0;
+            targetId = t.route[t.currentRouteIndex].id || -1;
+        } else {
+            targetX = 0;
+            targetY = 0;
+            targetId = 0;
+        }
+        
+        const safeSpeed = (!isNaN(simulationSpeed) && simulationSpeed > 0) ? simulationSpeed : 1;
+        const speedFactor = safeSpeed * 0.05;
+        
+        t.x = (isNaN(t.x) ? 0 : t.x) + (targetX - (isNaN(t.x) ? 0 : t.x)) * speedFactor;
+        t.y = (isNaN(t.y) ? 0 : t.y) + (targetY - (isNaN(t.y) ? 0 : t.y)) * speedFactor;
+        
+        checkArrival(t, targetX, targetY, targetId, t.route.length);
+    });
+}
+
+function checkArrival(t, tx, ty, tId, routeLen) {
+    const dist = Math.sqrt((tx - t.x)**2 + (ty - t.y)**2);
     if (dist < 1.0) {
-        truck.x = tx;
-        truck.y = ty;
+        t.x = tx;
+        t.y = ty;
         
         if (tId > 0) {
             refillATM(tId);
         }
-        truck.currentRouteIndex++;
-        if (truck.currentRouteIndex > routeLen) {
-            truck.active = false;
+        t.currentRouteIndex++;
+        if (t.currentRouteIndex > routeLen) {
+            t.active = false;
         }
     }
 }
@@ -1074,10 +1152,13 @@ function startTruckAnimation() {
 }
 
 function animateTruckStep() {
-    if (simulationRunning && truck && truck.active) {
-        updateTruckPosition();
-        const canvas = document.getElementById('atm-map-canvas');
-        if (canvas) draw(canvas);
+    if (simulationRunning) {
+        const anyActive = trucks.some(t => t.active);
+        if (anyActive) {
+            updateTruckPositions();
+            const canvas = document.getElementById('atm-map-canvas');
+            if (canvas) draw(canvas);
+        }
     }
     truckAnimFrame = requestAnimationFrame(animateTruckStep);
 }
@@ -1089,8 +1170,11 @@ function startSimulation() {
         originalATMData = JSON.parse(JSON.stringify(atmData));
     }
     
-    if (!truck) initializeTruck();
-    truck.active = true;
+    if (!trucks || trucks.length === 0) {
+        initializeTrucks();
+    }
+    assignRoutesToTrucks();
+    trucks.forEach(t => t.active = true);
     startTruckAnimation();
     
     simulationRunning = true;
@@ -1103,14 +1187,14 @@ function pauseSimulation() {
     if (!simulationRunning) return;
     simulationRunning = false;
     clearInterval(simulationInterval);
-    if (truck) truck.active = false;
+    trucks.forEach(t => t.active = false);
 }
 
 function resetSimulation() {
     if (simulationInterval) clearInterval(simulationInterval);
     simulationRunning = false;
     
-    initializeTruck();
+    initializeTrucks();
     if (truckAnimFrame) {
         cancelAnimationFrame(truckAnimFrame);
         truckAnimFrame = null;

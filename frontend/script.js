@@ -24,19 +24,39 @@ let knapsackSelected = new Set();
 let knapsackStats    = null;
 let dispatchMode     = false;
 
-function getStatus(tte) {
-    if (tte <= 2)    return 'CRITICAL';
-    if (tte <= 6)    return 'HIGH';
-    if (tte <= 12)   return 'MEDIUM';
+function getStatus(cashLevel) {
+    if (cashLevel < 20)    return 'CRITICAL';
+    if (cashLevel < 40)    return 'HIGH';
+    if (cashLevel < 60)   return 'MEDIUM';
     return 'LOW';
 }
 
 const STATUS_COLOR = {
     CRITICAL: '#EF4444',
-    HIGH:     '#FACC15',
-    MEDIUM:   '#60A5FA',
+    HIGH:     '#f97316',
+    MEDIUM:   '#FACC15',
     LOW:      '#4ADE80',
 };
+
+function lerpColor(c1, c2, t) {
+    const r1 = parseInt(c1.substring(1,3), 16);
+    const g1 = parseInt(c1.substring(3,5), 16);
+    const b1 = parseInt(c1.substring(5,7), 16);
+    const r2 = parseInt(c2.substring(1,3), 16);
+    const g2 = parseInt(c2.substring(3,5), 16);
+    const b2 = parseInt(c2.substring(5,7), 16);
+    const r = Math.round(r1 + (r2 - r1) * t);
+    const g = Math.round(g1 + (g2 - g1) * t);
+    const b = Math.round(b1 + (b2 - b1) * t);
+    return `#${(1<<24 | r<<16 | g<<8 | b).toString(16).slice(1).padStart(6, '0')}`;
+}
+
+function getInterpolatedColor(cashLevel) {
+    if (cashLevel >= 60) return lerpColor('#FACC15', '#4ADE80', Math.min(1, (cashLevel - 60) / 40));
+    if (cashLevel >= 40) return lerpColor('#f97316', '#FACC15', (cashLevel - 40) / 20);
+    if (cashLevel >= 20) return lerpColor('#EF4444', '#f97316', (cashLevel - 20) / 20);
+    return '#EF4444';
+}
 
 const STATUS_LABEL_CLASS = {
     CRITICAL: 'status-critical',
@@ -52,7 +72,7 @@ async function loadATMData() {
         const json = await resp.json();
         atmData = json.atms.map(a => ({
             ...a,
-            status: a.status || getStatus(a.timeToEmpty),
+            status: getStatus(a.cashLevel),
         }));
         
         try {
@@ -215,8 +235,8 @@ function renderUrgentPanel() {
         const tte     = Math.min(atm.timeToEmpty, 9999.99).toFixed(1);
         const cls     = STATUS_LABEL_CLASS[atm.status] || 'status-low';
         const timeCol = atm.status === 'CRITICAL' ? 'text-red-400'
-                      : atm.status === 'HIGH'     ? 'text-yellow-400'
-                      : atm.status === 'MEDIUM'   ? 'text-blue-400'
+                      : atm.status === 'HIGH'     ? 'text-orange-500'
+                      : atm.status === 'MEDIUM'   ? 'text-yellow-400'
                       : 'text-green-400';
 
         return `
@@ -431,7 +451,7 @@ function draw(canvas) {
 
     atmData.forEach(atm => {
         const { cx, cy } = atmToCanvas(atm, canvas);
-        let color = STATUS_COLOR[atm.status] || '#4ADE80';
+        let color = getInterpolatedColor(atm.cashLevel);
         
         if (clusterModeActive && atm.cluster !== undefined && atm.cluster >= 0) {
             color = CLUSTER_COLORS[atm.cluster] || color;
@@ -724,8 +744,8 @@ function renderDispatchTable() {
         const atm       = it.atm;
         const cls       = STATUS_LABEL_CLASS[atm.status] || 'status-low';
         const timeColor = atm.status === 'CRITICAL' ? 'text-red-400'
-                        : atm.status === 'HIGH'     ? 'text-yellow-400'
-                        : atm.status === 'MEDIUM'   ? 'text-blue-400'
+                        : atm.status === 'HIGH'     ? 'text-orange-500'
+                        : atm.status === 'MEDIUM'   ? 'text-yellow-400'
                         : 'text-green-400';
         const tte  = Math.min(atm.timeToEmpty, 9999.99).toFixed(2);
         const rank = String(i + 1).padStart(2, '0');
@@ -1000,7 +1020,7 @@ function updateATMValues() {
         
         if (atm.cashLevel === 0) atm.timeToEmpty = 0;
         
-        atm.status = getStatus(atm.timeToEmpty);
+        atm.status = getStatus(atm.cashLevel);
     });
     
     renderAll();

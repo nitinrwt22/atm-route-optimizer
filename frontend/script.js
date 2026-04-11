@@ -947,4 +947,79 @@ function renderOptimizationInsights() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', loadATMData);
+let simulationRunning = false;
+let simulationTime = 0;
+let simulationSpeed = 1;
+let simulationInterval = null;
+let originalATMData = null;
+
+function startSimulation() {
+    if (simulationRunning) return;
+    
+    if (!originalATMData) {
+        originalATMData = JSON.parse(JSON.stringify(atmData));
+    }
+    
+    simulationRunning = true;
+    simulationInterval = setInterval(() => {
+        updateATMValues();
+    }, 1000);
+}
+
+function pauseSimulation() {
+    if (!simulationRunning) return;
+    simulationRunning = false;
+    clearInterval(simulationInterval);
+}
+
+function resetSimulation() {
+    if (simulationInterval) clearInterval(simulationInterval);
+    simulationRunning = false;
+    
+    if (originalATMData) {
+        atmData = JSON.parse(JSON.stringify(originalATMData));
+        renderAll();
+    }
+}
+
+function updateATMValues() {
+    atmData.forEach(atm => {
+        const hourlyRate = (atm.dailyWithdrawalRate || 0) / 24;
+        atm.cashLevel -= hourlyRate * simulationSpeed * 0.01;
+        
+        if (atm.cashLevel < 0) {
+            atm.cashLevel = 0;
+        }
+        
+        const actualCash = (atm.cashLevel / 100) * ATM_CAPACITY;
+        if (hourlyRate > 0) {
+            atm.timeToEmpty = actualCash / hourlyRate;
+        } else {
+            atm.timeToEmpty = 9999;
+        }
+        
+        if (atm.cashLevel === 0) atm.timeToEmpty = 0;
+        
+        atm.status = getStatus(atm.timeToEmpty);
+    });
+    
+    renderAll();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadATMData();
+    
+    const startBtn = document.getElementById('startSimulationBtn');
+    const pauseBtn = document.getElementById('pauseSimulationBtn');
+    const resetBtn = document.getElementById('resetSimulationBtn');
+    const speedSel = document.getElementById('speedControl');
+    
+    if (startBtn) startBtn.addEventListener('click', startSimulation);
+    if (pauseBtn) pauseBtn.addEventListener('click', pauseSimulation);
+    if (resetBtn) resetBtn.addEventListener('click', resetSimulation);
+    if (speedSel) {
+        speedSel.addEventListener('change', (e) => {
+            simulationSpeed = parseInt(e.target.value, 10);
+        });
+    }
+});

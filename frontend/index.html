@@ -305,7 +305,39 @@
                 </div>
 
                 <div
-                    class="md:col-span-3 p-8 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-2xl relative overflow-hidden">
+                    class="md:col-span-1 p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl flex flex-col justify-between">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Simulation Controls</h3>
+                        <span class="material-symbols-outlined text-primary-container text-sm" data-icon="settings_b_roll">settings_b_roll</span>
+                    </div>
+
+                    <div class="flex items-center gap-3 mb-4">
+                        <button id="startSimulationBtn" class="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-primary-container bg-opacity-10 text-primary-container hover:bg-opacity-20 border border-primary-container border-opacity-20 transition-all hover:shadow-[0_0_15px_rgba(0,242,255,0.2)] active:scale-95 group">
+                            <span class="material-symbols-outlined text-sm transition-transform group-hover:scale-110">play_arrow</span>
+                        </button>
+                        <button id="pauseSimulationBtn" class="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-yellow-400 bg-opacity-10 text-yellow-400 hover:bg-opacity-20 border border-yellow-400 border-opacity-20 transition-all hover:shadow-[0_0_15px_rgba(250,204,21,0.2)] active:scale-95 group">
+                            <span class="material-symbols-outlined text-sm transition-transform group-hover:scale-110">pause</span>
+                        </button>
+                        <button id="resetSimulationBtn" class="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-red-400 bg-opacity-10 text-red-400 hover:bg-opacity-20 border border-red-400 border-opacity-20 transition-all hover:shadow-[0_0_15px_rgba(239,68,68,0.2)] active:scale-95 group">
+                            <span class="material-symbols-outlined text-sm transition-transform group-hover:-rotate-90">refresh</span>
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5 pt-4 border-t border-outline-variant border-opacity-10">
+                        <label for="speedControl" class="text-[10px] uppercase font-bold text-on-surface-variant text-opacity-80">Speed Selector</label>
+                        <div class="relative">
+                            <select id="speedControl" class="w-full appearance-none bg-surface border border-outline-variant border-opacity-20 text-on-surface text-sm rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors cursor-pointer">
+                                <option value="1">1x</option>
+                                <option value="2">2x</option>
+                                <option value="5">5x</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-lg">expand_more</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="md:col-span-2 p-8 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-2xl relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-64 h-64 bg-primary-container bg-opacity-5 blur-[100px] pointer-events-none"></div>
 
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">

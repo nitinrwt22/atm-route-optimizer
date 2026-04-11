@@ -1,10 +1,60 @@
 Selected ATMs for Truck Dispatch
 ========================================
+ATM_049 | Gandhi Nagar | Refill: ₹979700 | TimeLeft: 9.47 hrs
+ATM_036 | INA Colony | Refill: ₹979600 | TimeLeft: 9.44 hrs
+ATM_045 | Vivek Vihar | Refill: ₹980600 | TimeLeft: 9.40 hrs
+ATM_038 | Jangpura | Refill: ₹982000 | TimeLeft: 9.26 hrs
+ATM_043 | Laxmi Nagar | Refill: ₹981100 | TimeLeft: 9.10 hrs
+ATM_047 | Dilshad Garden | Refill: ₹979900 | TimeLeft: 9.01 hrs
+ATM_033 | Hauz Khas | Refill: ₹981800 | TimeLeft: 9.01 hrs
+ATM_035 | Safdarjung | Refill: ₹980100 | TimeLeft: 8.88 hrs
+ATM_052 | Mayur Vihar 2 | Refill: ₹981300 | TimeLeft: 8.84 hrs
+ATM_051 | Mayur Vihar 1 | Refill: ₹981700 | TimeLeft: 8.81 hrs
+ATM_031 | Greater Kailash 1 | Refill: ₹982700 | TimeLeft: 8.68 hrs
+ATM_034 | Green Park | Refill: ₹980200 | TimeLeft: 8.68 hrs
+ATM_050 | Krishna Nagar | Refill: ₹982100 | TimeLeft: 8.67 hrs
+ATM_039 | Okhla Phase 1 | Refill: ₹983000 | TimeLeft: 8.66 hrs
+ATM_040 | Govindpuri | Refill: ₹982300 | TimeLeft: 8.38 hrs
+ATM_055 | Kondli | Refill: ₹983200 | TimeLeft: 8.29 hrs
+ATM_046 | Shahdara | Refill: ₹982700 | TimeLeft: 8.06 hrs
+ATM_042 | Nehru Place | Refill: ₹982900 | TimeLeft: 8.02 hrs
+ATM_032 | Greater Kailash 2 | Refill: ₹984300 | TimeLeft: 7.74 hrs
+ATM_053 | Patparganj | Refill: ₹982400 | TimeLeft: 7.72 hrs
+ATM_054 | Vasundhara Enclave | Refill: ₹982600 | TimeLeft: 7.65 hrs
+ATM_048 | Geeta Colony | Refill: ₹983400 | TimeLeft: 7.60 hrs
+ATM_041 | Kalkaji | Refill: ₹984500 | TimeLeft: 7.51 hrs
+ATM_044 | Preet Vihar | Refill: ₹984100 | TimeLeft: 7.38 hrs
+ATM_037 | Defence Colony | Refill: ₹984200 | TimeLeft: 6.92 hrs
+ATM_016 | Punjabi Bagh | Refill: ₹984200 | TimeLeft: 5.56 hrs
+ATM_018 | Ashok Vihar | Refill: ₹984200 | TimeLeft: 5.42 hrs
+ATM_017 | Shalimar Bagh | Refill: ₹984800 | TimeLeft: 5.16 hrs
+ATM_014 | Subhash Nagar | Refill: ₹985800 | TimeLeft: 4.77 hrs
+ATM_028 | Kalighat | Refill: ₹987200 | TimeLeft: 4.46 hrs
+ATM_027 | Paharganj | Refill: ₹987600 | TimeLeft: 4.28 hrs
+ATM_026 | Sadar Bazar | Refill: ₹987800 | TimeLeft: 4.28 hrs
+ATM_030 | Malviya Nagar | Refill: ₹987900 | TimeLeft: 4.10 hrs
+ATM_019 | Model Town | Refill: ₹988200 | TimeLeft: 3.99 hrs
+ATM_021 | Kamla Nagar | Refill: ₹988800 | TimeLeft: 3.92 hrs
+ATM_022 | Civil Lines | Refill: ₹989300 | TimeLeft: 3.71 hrs
+ATM_023 | Kashmere Gate | Refill: ₹989600 | TimeLeft: 3.61 hrs
+ATM_025 | Lal Kuan | Refill: ₹989700 | TimeLeft: 3.61 hrs
+ATM_013 | Tilak Nagar | Refill: ₹989700 | TimeLeft: 3.49 hrs
+ATM_015 | Tagore Garden | Refill: ₹989900 | TimeLeft: 3.44 hrs
+ATM_020 | GTB Nagar | Refill: ₹990500 | TimeLeft: 3.27 hrs
+ATM_029 | Chittaranjan Park | Refill: ₹991400 | TimeLeft: 2.98 hrs
+ATM_024 | Chandni Chowk | Refill: ₹993300 | TimeLeft: 2.23 hrs
+ATM_007 | Pitampura | Refill: ₹995500 | TimeLeft: 1.42 hrs
+ATM_009 | Rajouri Garden | Refill: ₹996900 | TimeLeft: 0.90 hrs
+ATM_008 | Janakpuri | Refill: ₹997000 | TimeLeft: 0.80 hrs
+ATM_002 | Lajpat Nagar | Refill: ₹997400 | TimeLeft: 0.74 hrs
+ATM_010 | Paschim Vihar | Refill: ₹997700 | TimeLeft: 0.71 hrs
+ATM_011 | Vikaspuri | Refill: ₹997300 | TimeLeft: 0.68 hrs
+ATM_006 | Rohini Sector 3 | Refill: ₹997600 | TimeLeft: 0.68 hrs
 ATM_003 | Karol Bagh | Refill: ₹997700 | TimeLeft: 0.60 hrs
 ATM_001 | Connaught Place | Refill: ₹998400 | TimeLeft: 0.42 hrs
 ATM_012 | Uttam Nagar | Refill: ₹998800 | TimeLeft: 0.34 hrs
 ATM_004 | Saket | Refill: ₹999100 | TimeLeft: 0.27 hrs
 ATM_005 | Dwarka Sector 10 | Refill: ₹999200 | TimeLeft: 0.22 hrs
 ----------------------------------------
-Total Load    : ₹49.93 lakh
-Total Urgency : 15235
+Total Load    : ₹543.15 lakh
+Total Urgency : 31657

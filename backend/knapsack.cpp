@@ -12,8 +12,8 @@
 using namespace std;
 
 const double ATM_CAPACITY = 1000000.0;
-const int TRUCK_CAPACITY = 5000;
-const int TOP_N = 25;
+const int TRUCK_CAPACITY = 80000;
+const int TOP_N = 100;
 
 struct ATM {
   int id;

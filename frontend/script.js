@@ -549,6 +549,26 @@ function draw(canvas) {
             ctx.fillText(label, cx, cy - 22);
         });
     }
+
+    if (typeof truck !== 'undefined' && truck && truck.active) {
+        const { cx, cy } = atmToCanvas({x: truck.x, y: truck.y}, canvas);
+        ctx.shadowColor = '#00f2ff';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.rect(cx - 12, cy - 8, 24, 16);
+        ctx.fillStyle = '#1e293b';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#00f2ff';
+        ctx.stroke();
+        
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#00f2ff';
+        ctx.font = 'bold 8px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('TRK', cx, cy);
+    }
 }
 
 function findAtmAt(canvas, mx, my) {
@@ -973,12 +993,105 @@ let simulationSpeed = 1;
 let simulationInterval = null;
 let originalATMData = null;
 
+let truck = null;
+let truckAnimFrame = null;
+
+function initializeTruck() {
+    truck = {
+        x: 0,
+        y: 0,
+        currentRouteIndex: 0,
+        active: false
+    };
+}
+
+function updateTruckPosition() {
+    if (!truck || !truck.active) return;
+    
+    let route = [];
+    if (showOptimizedRoute && optimizedRouteData && optimizedRouteData.length > 0) {
+        route = optimizedRouteData;
+    } else if (routeData && routeData.length > 0) {
+        route = routeData;
+    } else {
+        return;
+    }
+    
+    if (route.length === 0) return;
+    
+    let targetX = 0;
+    let targetY = 0;
+    let targetId = -1;
+    
+    if (truck.currentRouteIndex < route.length) {
+        targetX = route[truck.currentRouteIndex].x;
+        targetY = route[truck.currentRouteIndex].y;
+        targetId = route[truck.currentRouteIndex].id;
+    } else {
+        targetX = 0;
+        targetY = 0;
+        targetId = 0;
+    }
+    
+    const speedFactor = simulationSpeed * 0.05;
+    truck.x = truck.x + (targetX - truck.x) * speedFactor;
+    truck.y = truck.y + (targetY - truck.y) * speedFactor;
+    
+    checkArrival(targetX, targetY, targetId, route.length);
+}
+
+function checkArrival(tx, ty, tId, routeLen) {
+    const dist = Math.sqrt((tx - truck.x)**2 + (ty - truck.y)**2);
+    if (dist < 1.0) {
+        truck.x = tx;
+        truck.y = ty;
+        
+        if (tId > 0) {
+            refillATM(tId);
+        }
+        truck.currentRouteIndex++;
+        if (truck.currentRouteIndex > routeLen) {
+            truck.active = false;
+        }
+    }
+}
+
+function refillATM(atmId) {
+    const atm = atmData.find(a => a.id === atmId);
+    if (atm) {
+        atm.cashLevel = 100;
+        atm.status = getStatus(atm.cashLevel);
+        const hourlyRate = (atm.dailyWithdrawalRate || 0) / 24;
+        const actualCash = ATM_CAPACITY;
+        atm.timeToEmpty = hourlyRate > 0 ? actualCash / hourlyRate : 9999;
+    }
+}
+
+function startTruckAnimation() {
+    if (!truckAnimFrame) {
+        animateTruckStep();
+    }
+}
+
+function animateTruckStep() {
+    if (simulationRunning && truck && truck.active) {
+        updateTruckPosition();
+        const canvas = document.getElementById('atm-map-canvas');
+        if (canvas) draw(canvas);
+    }
+    truckAnimFrame = requestAnimationFrame(animateTruckStep);
+}
+
 function startSimulation() {
     if (simulationRunning) return;
     
     if (!originalATMData) {
         originalATMData = JSON.parse(JSON.stringify(atmData));
     }
+    
+    if (!truck) initializeTruck();
+    truck.active = true;
+    startTruckAnimation();
     
     simulationRunning = true;
     simulationInterval = setInterval(() => {
@@ -990,11 +1103,18 @@ function pauseSimulation() {
     if (!simulationRunning) return;
     simulationRunning = false;
     clearInterval(simulationInterval);
+    if (truck) truck.active = false;
 }
 
 function resetSimulation() {
     if (simulationInterval) clearInterval(simulationInterval);
     simulationRunning = false;
+    
+    initializeTruck();
+    if (truckAnimFrame) {
+        cancelAnimationFrame(truckAnimFrame);
+        truckAnimFrame = null;
+    }
     
     if (originalATMData) {
         atmData = JSON.parse(JSON.stringify(originalATMData));

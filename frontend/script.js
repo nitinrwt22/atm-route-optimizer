@@ -743,7 +743,7 @@ if (dispatchToggle) {
     dispatchToggle.addEventListener('click', () => {
         dispatchMode = !dispatchMode;
         dispatchToggle.classList.toggle('active', dispatchMode);
-        if (dispatchLabel) dispatchLabel.textContent = dispatchMode ? 'ON' : 'OFF';
+        if (dispatchLabel) dispatchLabel.textContent = dispatchMode ? 'Dispatch: ON' : 'Dispatch: OFF';
 
         const canvas = document.getElementById('atm-map-canvas');
         if (canvas) {
@@ -1247,3 +1247,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+// Tab Switching Logic
+function switchTab(tabId) {
+    // Hide all tabs
+    document.getElementById('tab-dashboard').classList.add('hidden');
+    document.getElementById('tab-map').classList.add('hidden');
+    
+    // Show target tab
+    document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+    
+    // Update active nav state for desktop
+    const desktopTabs = document.querySelectorAll('.nav-tab-desktop');
+    if (desktopTabs.length > 0) {
+        desktopTabs.forEach(tab => tab.classList.remove('nav-active'));
+        const index = tabId === 'dashboard' ? 0 : 1;
+        desktopTabs[index].classList.add('nav-active');
+    }
+    
+    // Update active nav state for mobile
+    const mobileTabs = document.querySelectorAll('.nav-tab-mobile');
+    if (mobileTabs.length > 0) {
+        mobileTabs.forEach(tab => {
+            tab.classList.remove('text-primary-container');
+            tab.classList.add('text-on-surface');
+        });
+        const index = tabId === 'dashboard' ? 0 : 1;
+        mobileTabs[index].classList.remove('text-on-surface');
+        mobileTabs[index].classList.add('text-primary-container');
+    }
+    
+    // Trigger resize to fix canvas sizing if map tab becomes visible
+    if (tabId === 'map') {
+        window.dispatchEvent(new Event('resize'));
+    }
+}
+
+// Initial active state for mobile
+const initMobileTabs = document.querySelectorAll('.nav-tab-mobile');
+if (initMobileTabs.length > 0) {
+    initMobileTabs[0].classList.remove('text-on-surface');
+    initMobileTabs[0].classList.add('text-primary-container');
+}

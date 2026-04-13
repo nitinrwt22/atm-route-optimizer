@@ -126,8 +126,9 @@
     <div id="layout-wrapper" class="md:pl-64 transition-[padding] duration-300">
         <main class="pt-24 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
 
-            <section
-                class="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden bg-surface-container-low border border-outline-variant border-opacity-10 shadow-2xl">
+            <!-- TAB 2: MAP -->
+            <div id="tab-map" class="hidden space-y-6">
+                <section class="relative h-[70vh] md:h-[80vh] rounded-2xl overflow-hidden bg-surface-container-low border border-outline-variant border-opacity-10 shadow-2xl">
 
                 <div class="absolute inset-0 z-0 opacity-60 grayscale contrast-125 brightness-75"
                     style="background-image: url('map-bg.jpg'); background-size: cover;">
@@ -155,6 +156,10 @@
                             <button id="route-toggle-btn" class="glass-panel p-3 rounded-xl pointer-events-auto hover:bg-surface-container-highest transition-colors flex items-center gap-2">
                                 <span class="material-symbols-outlined text-on-surface text-sm" id="route-toggle-icon">route</span>
                                 <span id="route-toggle-label" class="text-[10px] uppercase font-bold tracking-widest text-primary-container hidden md:inline">2-Opt: ON</span>
+                            </button>
+                            <button id="dispatch-mode-toggle" class="glass-panel p-3 rounded-xl pointer-events-auto hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+                                <span class="material-symbols-outlined text-on-surface text-sm">local_shipping</span>
+                                <span id="dispatch-mode-label" class="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant hidden md:inline">Dispatch: OFF</span>
                             </button>
                             <button onclick="loadATMData ? loadATMData() : null"
                                 class="glass-panel p-3 rounded-xl pointer-events-auto hover:bg-surface-container-highest transition-colors">
@@ -195,7 +200,43 @@
                     </div>
                 </div>
             </section>
+            
+                <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl max-w-2xl mx-auto w-full">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Simulation Controls</h3>
+                        <span class="material-symbols-outlined text-primary-container text-sm" data-icon="settings_b_roll">settings_b_roll</span>
+                    </div>
 
+                    <div class="flex flex-col sm:flex-row items-center gap-6">
+                        <div class="flex items-center gap-3 w-full sm:w-2/3">
+                            <button id="startSimulationBtn" class="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-[#00f2ff] text-black transition-all hover:shadow-[0_0_15px_rgba(0,242,255,0.5)] hover:bg-cyan-300 active:scale-95 group">
+                                <span class="material-symbols-outlined text-sm font-black transition-transform group-hover:scale-110">play_arrow</span>
+                            </button>
+                            <button id="pauseSimulationBtn" class="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-yellow-400 bg-opacity-10 text-yellow-400 hover:bg-opacity-20 border border-yellow-400 border-opacity-20 transition-all hover:shadow-[0_0_15px_rgba(250,204,21,0.2)] active:scale-95 group">
+                                <span class="material-symbols-outlined text-sm transition-transform group-hover:scale-110">pause</span>
+                            </button>
+                            <button id="resetSimulationBtn" class="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-red-400 bg-opacity-10 text-red-400 hover:bg-opacity-20 border border-red-400 border-opacity-20 transition-all hover:shadow-[0_0_15px_rgba(239,68,68,0.2)] active:scale-95 group">
+                                <span class="material-symbols-outlined text-sm transition-transform group-hover:-rotate-90">refresh</span>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col gap-1.5 w-full sm:w-1/3">
+                            <label for="speedControl" class="text-[10px] uppercase font-bold text-on-surface-variant text-opacity-80">Speed Selector</label>
+                            <div class="relative">
+                                <select id="speedControl" class="w-full appearance-none bg-surface border border-outline-variant border-opacity-20 text-on-surface text-sm rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors cursor-pointer">
+                                    <option value="1">1x</option>
+                                    <option value="2">2x</option>
+                                    <option value="5">5x</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-lg">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 1: DASHBOARD -->
+            <div id="tab-dashboard" class="space-y-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                 <div
@@ -304,37 +345,7 @@
                     </div>
                 </div>
 
-                <div
-                    class="md:col-span-1 p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl flex flex-col justify-between">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Simulation Controls</h3>
-                        <span class="material-symbols-outlined text-primary-container text-sm" data-icon="settings_b_roll">settings_b_roll</span>
-                    </div>
 
-                    <div class="flex items-center gap-3 mb-4">
-                        <button id="startSimulationBtn" class="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-[#00f2ff] text-black transition-all hover:shadow-[0_0_15px_rgba(0,242,255,0.5)] hover:bg-cyan-300 active:scale-95 group">
-                            <span class="material-symbols-outlined text-sm font-black transition-transform group-hover:scale-110">play_arrow</span>
-                        </button>
-                        <button id="pauseSimulationBtn" class="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-yellow-400 bg-opacity-10 text-yellow-400 hover:bg-opacity-20 border border-yellow-400 border-opacity-20 transition-all hover:shadow-[0_0_15px_rgba(250,204,21,0.2)] active:scale-95 group">
-                            <span class="material-symbols-outlined text-sm transition-transform group-hover:scale-110">pause</span>
-                        </button>
-                        <button id="resetSimulationBtn" class="flex-1 flex justify-center items-center py-2.5 rounded-xl bg-red-400 bg-opacity-10 text-red-400 hover:bg-opacity-20 border border-red-400 border-opacity-20 transition-all hover:shadow-[0_0_15px_rgba(239,68,68,0.2)] active:scale-95 group">
-                            <span class="material-symbols-outlined text-sm transition-transform group-hover:-rotate-90">refresh</span>
-                        </button>
-                    </div>
-
-                    <div class="flex flex-col gap-1.5 pt-4 border-t border-outline-variant border-opacity-10">
-                        <label for="speedControl" class="text-[10px] uppercase font-bold text-on-surface-variant text-opacity-80">Speed Selector</label>
-                        <div class="relative">
-                            <select id="speedControl" class="w-full appearance-none bg-surface border border-outline-variant border-opacity-20 text-on-surface text-sm rounded-xl px-4 py-2.5 pr-10 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors cursor-pointer">
-                                <option value="1">1x</option>
-                                <option value="2">2x</option>
-                                <option value="5">5x</option>
-                            </select>
-                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-lg">expand_more</span>
-                        </div>
-                    </div>
-                </div>
 
                 <div
                     class="md:col-span-2 p-8 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-2xl relative overflow-hidden">
@@ -462,7 +473,6 @@
                     </div>
                 </div>
             </section>
-
             <section id="knapsack-section" class="space-y-6 pb-8">
 
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -473,12 +483,6 @@
                         <p class="text-sm text-on-surface-variant mt-1">Optimal ATM selection within ₹50 lakh truck
                             capacity</p>
                     </div>
-                    <button id="dispatch-mode-toggle"
-                        class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-outline-variant text-on-surface-variant
-                               hover:border-primary-container hover:text-primary-container transition-all duration-200 font-bold text-sm tracking-wide">
-                        <span class="material-symbols-outlined text-base">local_shipping</span>
-                        Dispatch Mode: <span id="dispatch-mode-label">OFF</span>
-                    </button>
                 </div>
 
                 <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl">
@@ -566,7 +570,7 @@
                 </div>
 
             </section>
-
+            </div>
         </main>
     </div>
 
@@ -580,33 +584,17 @@
         </div>
         <nav class="flex-1 flex flex-col gap-1">
 
-            <a href="#atm-map-canvas"
-                class="group flex items-center gap-4 px-6 py-4 text-on-surface hover:text-primary-container hover:bg-surface-container-low transition-all"
-                onclick="this.closest('aside').querySelectorAll('a').forEach(a=>a.classList.remove('nav-active')); this.classList.add('nav-active');">
+            <button onclick="switchTab('dashboard')"
+                class="nav-tab-desktop group flex items-center gap-4 px-6 py-4 text-on-surface hover:text-primary-container hover:bg-surface-container-low transition-all w-full text-left nav-active">
+                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">dashboard</span>
+                <span class="font-['Inter'] text-label-sm uppercase tracking-widest">Dashboard</span>
+            </button>
+
+            <button onclick="switchTab('map')"
+                class="nav-tab-desktop group flex items-center gap-4 px-6 py-4 text-on-surface hover:text-primary-container hover:bg-surface-container-low transition-all w-full text-left">
                 <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">map</span>
-                <span class="font-['Inter'] text-label-sm uppercase tracking-widest">Map</span>
-            </a>
-
-            <a href="#urgent-list"
-                class="group flex items-center gap-4 px-6 py-4 text-on-surface hover:text-primary-container hover:bg-surface-container-low transition-all"
-                onclick="this.closest('aside').querySelectorAll('a').forEach(a=>a.classList.remove('nav-active')); this.classList.add('nav-active');">
-                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">warning</span>
-                <span class="font-['Inter'] text-label-sm uppercase tracking-widest">Urgent</span>
-            </a>
-
-            <a href="#cash-dist-chart"
-                class="group flex items-center gap-4 px-6 py-4 text-on-surface hover:text-primary-container hover:bg-surface-container-low transition-all"
-                onclick="this.closest('aside').querySelectorAll('a').forEach(a=>a.classList.remove('nav-active')); this.classList.add('nav-active');">
-                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">bar_chart</span>
-                <span class="font-['Inter'] text-label-sm uppercase tracking-widest">Fleet Health</span>
-            </a>
-
-            <a href="#knapsack-section"
-                class="group flex items-center gap-4 px-6 py-4 text-on-surface hover:text-primary-container hover:bg-surface-container-low transition-all"
-                onclick="this.closest('aside').querySelectorAll('a').forEach(a=>a.classList.remove('nav-active')); this.classList.add('nav-active');">
-                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">local_shipping</span>
-                <span class="font-['Inter'] text-label-sm uppercase tracking-widest">Dispatch</span>
-            </a>
+                <span class="font-['Inter'] text-label-sm uppercase tracking-widest">Map & Routing</span>
+            </button>
 
         </nav>
     </aside>
@@ -614,26 +602,16 @@
     <nav
         class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 md:hidden backdrop-blur-2xl border-t border-primary-container border-opacity-10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] rounded-t-2xl"
         style="background: color-mix(in srgb, var(--surface) 90%, transparent);">
-        <a href="#atm-map-canvas"
-            class="flex flex-col items-center justify-center text-on-surface hover:text-primary-container active:scale-90 transition-transform">
+        <button onclick="switchTab('dashboard')"
+            class="nav-tab-mobile nav-mobile-active flex flex-col items-center justify-center text-on-surface hover:text-primary-container active:scale-90 transition-all w-1/2">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span class="font-['Inter'] text-[10px] font-medium tracking-tight mt-1">Dashboard</span>
+        </button>
+        <button onclick="switchTab('map')"
+            class="nav-tab-mobile flex flex-col items-center justify-center text-on-surface hover:text-primary-container active:scale-90 transition-all w-1/2">
             <span class="material-symbols-outlined">map</span>
-            <span class="font-['Inter'] text-[10px] font-medium tracking-tight">Map</span>
-        </a>
-        <a href="#urgent-list"
-            class="flex flex-col items-center justify-center text-on-surface hover:text-primary-container active:scale-90 transition-transform">
-            <span class="material-symbols-outlined">warning</span>
-            <span class="font-['Inter'] text-[10px] font-medium tracking-tight">Urgent</span>
-        </a>
-        <a href="#cash-dist-chart"
-            class="flex flex-col items-center justify-center text-on-surface hover:text-primary-container active:scale-90 transition-transform">
-            <span class="material-symbols-outlined">bar_chart</span>
-            <span class="font-['Inter'] text-[10px] font-medium tracking-tight">Fleet</span>
-        </a>
-        <a href="#knapsack-section"
-            class="flex flex-col items-center justify-center text-on-surface hover:text-primary-container active:scale-90 transition-transform">
-            <span class="material-symbols-outlined">local_shipping</span>
-            <span class="font-['Inter'] text-[10px] font-medium tracking-tight">Dispatch</span>
-        </a>
+            <span class="font-['Inter'] text-[10px] font-medium tracking-tight mt-1">Map & Routing</span>
+        </button>
     </nav>
 
     <div class="fixed bottom-24 right-6 md:hidden z-40">

@@ -237,8 +237,10 @@ int main() {
     a.name =
         "ATM_" + string(3 - to_string(i + 1).size(), '0') + to_string(i + 1);
     a.location = LOCATIONS[i];
-    a.x = randDouble(0.0, 100.0);
-    a.y = randDouble(0.0, 100.0);
+    // Generate Lat/Lng in New Delhi bounding box
+    // Longitude is X, Latitude is Y
+    a.x = randDouble(77.00, 77.35);
+    a.y = randDouble(28.50, 28.75);
 
     if (i < 12) {
 

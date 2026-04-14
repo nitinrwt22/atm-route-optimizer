@@ -47,11 +47,11 @@ void generateRoute(const vector<ATMNode>& atms) {
     vector<bool> visited(n, false);
     vector<int> routeOrder;
     
-    double currentX = 0.0;
-    double currentY = 0.0;
+    double currentX = 77.21; // Depot Longitude (Connaught Place)
+    double currentY = 28.63; // Depot Latitude (Connaught Place)
     double totalDistance = 0.0;
     
-    cout << "\nStarting from depot (0, 0)\n";
+    cout << "\nStarting from depot (77.21, 28.63) [Connaught Place]\n";
     cout << string(60, '-') << "\n";
     
     for (int step = 0; step < n; ++step) {

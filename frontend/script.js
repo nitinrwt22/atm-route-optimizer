@@ -342,9 +342,21 @@ function renderMapMarkers() {
 }
 
 function atmToCanvas(atm, canvas) {
-    const pad = 0.15; // Increased padding from 0.08 so the depot (0,0) moves away from the top-left corner UI panels
-    const cx  = (pad + (atm.x / 100) * (1 - 2 * pad)) * canvas.width;
-    const cy  = (pad + (atm.y / 100) * (1 - 2 * pad)) * canvas.height;
+    // Phase 1 temporary mapping: Normalize real-world Delhi bounding box back to canvas percentages
+    const minLng = 77.00, maxLng = 77.35;
+    const minLat = 28.50, maxLat = 28.75;
+    
+    // Prevent division by zero and cap bounding box
+    let normX = (atm.x - minLng) / (maxLng - minLng);
+    let normY = (atm.y - minLat) / (maxLat - minLat);
+    
+    // Fallback for Depot or exact matches
+    if (atm.x === 77.21) normX = (77.21 - minLng) / (maxLng - minLng);
+    if (atm.y === 28.63) normY = (28.63 - minLat) / (maxLat - minLat);
+
+    const pad = 0.15; // Increased padding from 0.08 so the depot moves away from the top-left corner UI panels
+    const cx  = (pad + normX * (1 - 2 * pad)) * canvas.width;
+    const cy  = (pad + normY * (1 - 2 * pad)) * canvas.height;
     return { cx, cy };
 }
 
@@ -367,8 +379,8 @@ function renderRoutePath(canvas, ctx, routeArr, color, isDashed, drawIds) {
     ctx.save();
     ctx.beginPath();
     
-    // Depot coordinates (0, 0)
-    const depot = { x: 0, y: 0 };
+    // Depot coordinates (77.21, 28.63) - Connaught Place
+    const depot = { x: 77.21, y: 28.63 };
     const { cx: startCx, cy: startCy } = atmToCanvas(depot, canvas);
     
     ctx.moveTo(startCx, startCy);
@@ -1059,8 +1071,8 @@ function initializeTrucks() {
     for (let i = 0; i < 3; i++) {
         trucks.push({
             id: i,
-            x: 0,
-            y: 0,
+            x: 77.21,
+            y: 28.63,
             currentRouteIndex: 0,
             active: false,
             color: colors[i],
@@ -1103,8 +1115,8 @@ function updateTruckPositions() {
             targetY = t.route[t.currentRouteIndex].y || 0;
             targetId = t.route[t.currentRouteIndex].id || -1;
         } else {
-            targetX = 0;
-            targetY = 0;
+            targetX = 77.21;
+            targetY = 28.63;
             targetId = 0;
         }
         

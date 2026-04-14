@@ -259,344 +259,159 @@
                         <p class="text-[9px] uppercase tracking-widest text-on-surface-variant/50">Active Tracker</p>
                     </div>
                 </div>
-                </div>
-            </div>
-
-            <!-- TAB 1: DASHBOARD -->
-            <div id="tab-dashboard" class="space-y-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                <div
-                    class="md:col-span-1 p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl flex flex-col justify-between">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">System
-                            Summary</h3>
-                        <span class="material-symbols-outlined text-primary-container text-sm"
-                            data-icon="dns">dns</span>
-                    </div>
-                    <div class="space-y-4">
-                        <div>
-                            <p id="stat-total"
-                                class="text-display-lg font-headline font-bold text-primary-fixed-dim leading-none">—
-                            </p>
-                            <p
-                                class="text-[10px] uppercase font-bold text-on-surface-variant text-opacity-60 tracking-tighter">
-                                Total Active ATMs</p>
-                        </div>
-                        <div class="flex gap-4">
-                            <div
-                                class="flex-1 p-3 rounded-xl bg-red-500 bg-opacity-10 border border-red-500 border-opacity-20">
-                                <p id="stat-critical" class="text-red-400 text-xl font-bold">—</p>
-                                <p class="text-[9px] uppercase font-bold text-red-400 text-opacity-80">Critical</p>
-                            </div>
-                            <div
-                                class="flex-1 p-3 rounded-xl bg-primary-container bg-opacity-5 border border-primary-container border-opacity-10">
-                                <p id="stat-avg-time" class="text-on-surface text-xl font-bold">—</p>
-                                <p class="text-[9px] uppercase font-bold text-on-surface-variant text-opacity-80">Avg.
-                                    Time Left</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    class="md:col-span-1 p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Top
-                            Urgent ATMs</h3>
-                        <span class="material-symbols-outlined text-secondary-container text-sm"
-                            data-icon="priority_high">priority_high</span>
-                    </div>
-
-                    <div id="urgent-list" class="space-y-2 max-h-72 overflow-y-auto pr-1 scrollbar-hide">
-
-                        <div class="flex items-center justify-center h-32 text-on-surface-variant text-sm opacity-50">
-                            <span class="material-symbols-outlined animate-spin mr-2">progress_activity</span> Loading…
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    class="md:col-span-1 p-6 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-xl">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">
-                            Urgency Distribution</h3>
-                        <span class="material-symbols-outlined text-on-surface-variant text-sm"
-                            data-icon="pie_chart">pie_chart</span>
-                    </div>
-                    <div class="flex items-center justify-center gap-6 h-32">
-                        <div class="relative w-24 h-24">
-                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-
-                                <circle cx="18" cy="18" fill="none" r="16" stroke="#1c1b1b" stroke-width="4"></circle>
-
-                                <circle id="arc-critical" cx="18" cy="18" fill="none" r="16" stroke="#EF4444"
-                                    stroke-dasharray="0, 100" stroke-dashoffset="0" stroke-linecap="round"
-                                    stroke-width="4"></circle>
-
-                                <circle id="arc-high" cx="18" cy="18" fill="none" r="16" stroke="#f97316"
-                                    stroke-dasharray="0, 100" stroke-dashoffset="0" stroke-linecap="round"
-                                    stroke-width="4"></circle>
-
-                                <circle id="arc-medium" cx="18" cy="18" fill="none" r="16" stroke="#FACC15"
-                                    stroke-dasharray="0, 100" stroke-dashoffset="0" stroke-linecap="round"
-                                    stroke-width="4"></circle>
-
-                                <circle id="arc-low" cx="18" cy="18" fill="none" r="16" stroke="#4ADE80"
-                                    stroke-dasharray="0, 100" stroke-dashoffset="0" stroke-linecap="round"
-                                    stroke-width="4"></circle>
-                            </svg>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                                <span id="legend-critical"
-                                    class="text-[10px] uppercase font-bold text-on-surface-variant">—% Critical</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                                <span id="legend-high"
-                                    class="text-[10px] uppercase font-bold text-on-surface-variant">—% High</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
-                                <span id="legend-medium"
-                                    class="text-[10px] uppercase font-bold text-on-surface-variant">—% Medium</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-green-400"></span>
-                                <span id="legend-low" class="text-[10px] uppercase font-bold text-on-surface-variant">—%
-                                    Low</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-
-
-                <div
-                    class="md:col-span-2 p-8 rounded-2xl bg-surface-container-low border border-outline-variant border-opacity-5 shadow-2xl relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-64 h-64 bg-primary-container bg-opacity-5 blur-[100px] pointer-events-none"></div>
-
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                        <div>
-                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant mb-1">Fleet Cash Health</h3>
-                            <p class="text-2xl font-bold font-headline">Cash Level Distribution</p>
-                        </div>
-                        <div class="flex gap-8">
-                            <div>
-                                <p class="text-[10px] uppercase text-on-surface-variant font-bold">Avg Cash Level</p>
-                                <p id="stat-avg-cash" class="text-xl font-bold text-primary-container">—</p>
-                            </div>
-                            <div>
-                                <p class="text-[10px] uppercase text-on-surface-variant font-bold">ATMs Below 25%</p>
-                                <p id="stat-low-cash" class="text-xl font-bold text-secondary-container">—</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="relative h-36 w-full flex items-end gap-3 px-2" id="cash-dist-chart">
-
-                    </div>
-
-                    <div class="flex justify-between mt-4 px-2">
-                        <span class="text-[9px] uppercase font-bold text-on-surface-variant/50 tracking-wider">0–10%</span>
-                        <span class="text-[9px] uppercase font-bold text-on-surface-variant/50 tracking-wider">10–25%</span>
-                        <span class="text-[9px] uppercase font-bold text-on-surface-variant/50 tracking-wider">25–50%</span>
-                        <span class="text-[9px] uppercase font-bold text-on-surface-variant/50 tracking-wider">50–75%</span>
-                        <span class="text-[9px] uppercase font-bold text-on-surface-variant/50 tracking-wider">75–100%</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Optimization Insights Section -->
-            <section id="optimization-insights" class="space-y-6 pt-4 pb-4">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <!-- TAB 1: DASHBOARD (C++ Algorithm Analytics) -->
+            <div id="tab-dashboard" class="space-y-6">
+                <!-- Dashboard Header -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
                     <div>
-                        <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-1">Performance Overview</p>
-                        <h2 class="font-headline text-2xl font-bold text-on-surface">✨ Optimization Insights</h2>
+                        <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-1">C++ Execution Analytics</p>
+                        <h2 class="font-headline text-2xl md:text-3xl font-bold text-on-surface">Algorithmic Engine Health</h2>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <!-- Route Optimization Performance -->
-                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col justify-between group hover:border-primary-container/30 transition-colors">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Route Optimization</h3>
-                            <span class="material-symbols-outlined text-primary-container" data-icon="route">route</span>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-end">
-                                <p class="text-[10px] uppercase font-bold text-on-surface-variant">Nearest Neighbor</p>
-                                <p id="insight-route-nn" class="text-sm font-bold text-on-surface">—</p>
-                            </div>
-                            <div class="flex justify-between items-end">
-                                <p class="text-[10px] uppercase font-bold text-primary-container">2-Opt Optimized</p>
-                                <p id="insight-route-opt" class="text-lg font-bold text-primary-fixed-dim leading-none">—</p>
-                            </div>
-                            <div class="mt-2 pt-2 border-t border-outline-variant/10 flex justify-between items-center">
-                                <span class="text-[10px] uppercase font-bold text-on-surface-variant">Improvement</span>
-                                <span id="insight-route-imp" class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-green-500/20 text-green-400 border border-green-500/30">—</span>
-                            </div>
-                        </div>
-                    </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                    <!-- Capacity Utilization -->
-                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col justify-between group hover:border-secondary-container/30 transition-colors">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Capacity Used</h3>
-                            <span class="material-symbols-outlined text-secondary-container" data-icon="inventory_2">inventory_2</span>
-                        </div>
-                        <div class="space-y-4">
+                    <!-- Module 1: Priority Queue -->
+                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col group hover:border-red-400/30 transition-colors h-[28rem]">
+                        <div class="flex justify-between items-center mb-6">
                             <div>
-                                <p id="insight-capacity-text" class="text-lg font-bold text-secondary-fixed-dim leading-none">—</p>
-                                <p class="text-[10px] uppercase font-bold text-on-surface-variant mt-1">Truck Load</p>
+                                <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Mathematical Engine 1</h3>
+                                <p class="text-xl font-bold text-on-surface">Priority Queue Selection</p>
                             </div>
-                            <div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
-                                <div id="insight-capacity-bar" class="h-full rounded-full transition-all duration-1000" style="width: 0%; background: linear-gradient(90deg, var(--on-secondary-container), var(--secondary-container));"></div>
+                            <span class="material-symbols-outlined text-red-500 text-3xl" data-icon="notifications_active">notifications_active</span>
+                        </div>
+                        <div class="flex flex-col md:flex-row gap-6 flex-1 overflow-hidden">
+                             <!-- Urgency Pie Chart -->
+                             <div class="w-full md:w-1/3 flex flex-col items-center justify-center gap-4 border-b md:border-b-0 md:border-r border-outline-variant/10 pb-4 md:pb-0 md:pr-4">
+                                <div class="relative w-28 h-28 shrink-0">
+                                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                        <circle cx="18" cy="18" fill="none" r="16" stroke="#1c1b1b" stroke-width="4"></circle>
+                                        <circle id="arc-critical" cx="18" cy="18" fill="none" r="16" stroke="#EF4444" stroke-dasharray="0, 100" stroke-dashoffset="0" stroke-linecap="round" stroke-width="4"></circle>
+                                        <circle id="arc-high" cx="18" cy="18" fill="none" r="16" stroke="#f97316" stroke-dasharray="0, 100" stroke-dashoffset="0" stroke-linecap="round" stroke-width="4"></circle>
+                                        <circle id="arc-medium" cx="18" cy="18" fill="none" r="16" stroke="#FACC15" stroke-dasharray="0, 100" stroke-dashoffset="0" stroke-linecap="round" stroke-width="4"></circle>
+                                        <circle id="arc-low" cx="18" cy="18" fill="none" r="16" stroke="#4ADE80" stroke-dasharray="0, 100" stroke-dashoffset="0" stroke-linecap="round" stroke-width="4"></circle>
+                                    </svg>
+                                </div>
+                                <div class="space-y-1 w-full text-center">
+                                    <div class="flex items-center justify-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span><span id="legend-critical" class="text-[9px] uppercase font-bold text-on-surface-variant">—% CRT</span></div>
+                                    <div class="flex items-center justify-center gap-2"><span class="w-2 h-2 rounded-full bg-orange-500"></span><span id="legend-high" class="text-[9px] uppercase font-bold text-on-surface-variant">—% HGH</span></div>
+                                    <div class="flex items-center justify-center gap-2"><span class="w-2 h-2 rounded-full bg-yellow-400"></span><span id="legend-medium" class="text-[9px] uppercase font-bold text-on-surface-variant">—% MED</span></div>
+                                    <div class="flex items-center justify-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span id="legend-low" class="text-[9px] uppercase font-bold text-on-surface-variant">—% LOW</span></div>
+                                </div>
+                             </div>
+                             <!-- Urgent ATMs List -->
+                             <div class="w-full md:w-2/3 flex flex-col h-full">
+                                <p class="text-[10px] uppercase font-bold text-on-surface-variant mb-2 tracking-widest shrink-0">Top Depleted Terminals</p>
+                                <div class="space-y-2 overflow-y-auto pr-1 scrollbar-hide flex-1" id="urgent-list">
+                                     <div class="flex items-center justify-center h-full text-on-surface-variant text-sm opacity-50">
+                                         <span class="material-symbols-outlined animate-spin mr-2">progress_activity</span> Syncing Queue...
+                                     </div>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Module 2: K-Means Clustering -->
+                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col group hover:border-blue-400/30 transition-colors h-[28rem]">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Mathematical Engine 2</h3>
+                                <p class="text-xl font-bold text-on-surface">K-Means Geographic Clustering</p>
                             </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-[10px] uppercase font-bold text-on-surface-variant">Utilization</span>
-                                <span id="insight-capacity-pct" class="text-sm font-bold text-on-surface">—</span>
+                            <span class="material-symbols-outlined text-blue-500 text-3xl" data-icon="hub">hub</span>
+                        </div>
+                        <div class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 scrollbar-hide" id="insight-clusters-container">
+                            <!-- Populated via script.js -->
+                            <div class="flex items-center justify-center h-full text-on-surface-variant text-sm opacity-50">
+                                <span class="material-symbols-outlined animate-spin mr-2">progress_activity</span> Computing Clusters...
                             </div>
                         </div>
                     </div>
 
-                    <!-- Cluster Distribution -->
-                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col justify-between group hover:border-blue-400/30 transition-colors">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Cluster Zones</h3>
-                            <span class="material-symbols-outlined text-blue-400" data-icon="hub">hub</span>
+                    <!-- Module 3: TSP & 2-Opt -->
+                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col group hover:border-green-400/30 transition-colors h-[24rem]">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Mathematical Engine 3</h3>
+                                <p class="text-xl font-bold text-on-surface">TSP & 2-Opt Route Distances</p>
+                            </div>
+                            <span class="material-symbols-outlined text-green-500 text-3xl" data-icon="route">route</span>
                         </div>
-                        <div id="insight-clusters-container" class="space-y-3">
-                            <div class="flex items-center justify-center h-full text-on-surface-variant text-xs opacity-50">Loading clusters…</div>
+                        <div class="flex-1 space-y-6 flex flex-col justify-center">
+                             <div class="flex justify-between items-center bg-surface-container py-5 px-6 rounded-xl border border-outline-variant/5">
+                                 <div>
+                                    <p class="text-sm font-headline font-bold text-on-surface-variant tracking-wider">Nearest Neighbor Traversal</p>
+                                    <p class="text-[10px] uppercase font-bold text-on-surface-variant/50 tracking-widest mt-0.5">Greedy Distance</p>
+                                 </div>
+                                 <p id="insight-route-nn" class="text-2xl font-bold text-on-surface font-headline">—</p>
+                             </div>
+                             
+                             <div class="flex items-center justify-center my-[-1rem] z-10 relative pointer-events-none">
+                                <span class="material-symbols-outlined text-outline-variant bg-surface-container-low rounded-full p-1 border border-outline-variant/10">arrow_downward</span>
+                             </div>
+
+                             <div class="flex justify-between items-center bg-primary-container/10 border border-primary-container/20 py-5 px-6 rounded-xl relative overflow-hidden">
+                                 <div class="absolute right-0 top-0 w-32 h-32 bg-primary-container/20 blur-2xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
+                                 <div class="z-10 relative">
+                                    <p class="text-sm font-headline font-bold text-primary-fixed-dim tracking-wider">2-Opt Refined Traversal</p>
+                                    <p class="text-[10px] uppercase font-bold text-primary-container/70 tracking-widest mt-0.5">Algorithm Distance</p>
+                                 </div>
+                                 <div class="text-right z-10 relative">
+                                     <p id="insight-route-opt" class="text-4xl font-black text-primary-fixed-dim leading-none drop-shadow-[0_0_10px_rgba(0,242,255,0.2)]">—</p>
+                                     <p id="insight-route-imp" class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-black uppercase text-green-400 bg-green-500/20 shadow-[0_0_10px_rgba(74,222,128,0.1)]">—</p>
+                                 </div>
+                             </div>
                         </div>
                     </div>
 
-                    <!-- Urgency Distribution Summary -->
-                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col justify-between group hover:border-red-400/30 transition-colors">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Urgency Summary</h3>
-                            <span class="material-symbols-outlined text-red-400" data-icon="notifications_active">notifications_active</span>
+                    <!-- Module 4: 0/1 Knapsack -->
+                    <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl flex flex-col group hover:border-secondary-container/30 transition-colors h-[24rem]">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Mathematical Engine 4</h3>
+                                <p class="text-xl font-bold text-on-surface">0/1 Knapsack Capacity Allocation</p>
+                            </div>
+                            <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl" data-icon="inventory_2">inventory_2</span>
                         </div>
-                        <div class="space-y-2">
-                            <div class="flex items-center justify-between group/row">
-                                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="text-[10px] uppercase font-bold text-on-surface-variant group-hover/row:text-red-400 transition-colors">Critical</span></div>
-                                <span id="insight-urgency-critical" class="text-sm font-bold text-on-surface">—</span>
+                        
+                        <!-- Progress Bar Payload -->
+                        <div class="flex items-center justify-between mb-2">
+                             <div class="flex items-baseline gap-2">
+                                <span id="truck-load-label" class="text-sm font-bold text-secondary-fixed-dim">—</span>
+                                <span class="text-[10px] uppercase text-on-surface-variant font-bold">/ ₹50 LAKH LIMIT</span>
+                             </div>
+                             <span id="truck-pct-pill" class="px-3 py-1 rounded-full text-xs font-black bg-secondary-container/10 text-secondary-container border border-secondary-container/20">—% LOADED</span>
+                        </div>
+                        <div class="truck-bar-track mb-5 shrink-0 h-4">
+                             <div id="truck-bar-fill" class="h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,242,255,0.2)]" style="width: 0%; background: linear-gradient(90deg, var(--primary-container), #00f2ff);"></div>
+                        </div>
+                        
+                        <!-- DP Selection List -->
+                        <div class="flex-1 overflow-hidden flex flex-col border border-outline-variant/10 rounded-xl relative">
+                            <table class="w-full text-left text-xs bg-transparent">
+                               <thead class="sticky top-0 bg-surface-container border-b border-outline-variant/20 z-10 w-full">
+                                   <tr>
+                                      <th class="p-3 text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">ATM</th>
+                                      <th class="p-3 text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Urgency DP Value</th>
+                                      <th class="p-3 text-[10px] uppercase font-bold text-on-surface-variant tracking-wider text-right">Cash Weight</th>
+                                   </tr>
+                               </thead>
+                            </table>
+                            <div class="overflow-y-auto flex-1 scrollbar-hide bg-surface/30">
+                                <table class="w-full text-left text-xs relative">
+                                    <tbody id="dispatch-tbody">
+                                        <tr><td colspan="3" class="text-center py-10 text-on-surface-variant/50"><span class="material-symbols-outlined animate-spin mb-2 block">progress_activity</span>Computing Knapsack...</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="flex items-center justify-between group/row">
-                                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-orange-500"></span><span class="text-[10px] uppercase font-bold text-on-surface-variant group-hover/row:text-orange-500 transition-colors">High</span></div>
-                                <span id="insight-urgency-high" class="text-sm font-bold text-on-surface">—</span>
-                            </div>
-                            <div class="flex items-center justify-between group/row">
-                                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-yellow-400"></span><span class="text-[10px] uppercase font-bold text-on-surface-variant group-hover/row:text-yellow-400 transition-colors">Medium</span></div>
-                                <span id="insight-urgency-medium" class="text-sm font-bold text-on-surface">—</span>
-                            </div>
-                            <div class="flex items-center justify-between group/row">
-                                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-400"></span><span class="text-[10px] uppercase font-bold text-on-surface-variant group-hover/row:text-green-400 transition-colors">Low</span></div>
-                                <span id="insight-urgency-low" class="text-sm font-bold text-on-surface">—</span>
+                            <div id="dispatch-tfoot-wrapper" class="hidden bg-surface-container border-t border-outline-variant/20 p-3 pt-2 pb-2 flex justify-between items-center">
+                                <span class="text-[10px] uppercase font-black tracking-widest text-on-surface-variant shrink-0">TOTALS:</span>
+                                <span id="foot-urgency" class="text-xs font-bold text-red-400">— Pts</span>
+                                <span id="foot-load" class="text-xs font-black text-secondary-fixed-dim text-right">—</span>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
-            <section id="knapsack-section" class="space-y-6 pb-8">
-
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-1">0/1
-                            Knapsack DP</p>
-                        <h2 class="font-headline text-2xl font-bold text-on-surface">🚛 Truck Dispatch Optimizer</h2>
-                        <p class="text-sm text-on-surface-variant mt-1">Optimal ATM selection within ₹50 lakh truck
-                            capacity</p>
-                    </div>
-                </div>
-
-                <div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">Truck
-                            Capacity Load</h3>
-                        <div class="flex items-center gap-3">
-                            <span id="truck-load-label" class="text-xs font-bold text-primary-fixed-dim">— / ₹50
-                                lakh</span>
-                            <span id="truck-pct-pill"
-                                class="px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary-container/10 text-primary-container border border-primary-container/20">
-                                —%
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="truck-bar-track">
-                        <div id="truck-bar-fill" class="truck-bar-fill" style="width: 0%">
-
-                        </div>
-
-                        <div
-                            class="absolute right-0 top-0 h-full flex flex-col justify-center pr-3 pointer-events-none">
-                            <span
-                                class="text-[9px] font-black text-on-surface-variant/60 uppercase tracking-wider">Max</span>
-                        </div>
-                    </div>
-
-                    <div class="mt-3 flex items-center gap-2 text-[10px] text-on-surface-variant">
-                        <span class="material-symbols-outlined text-sm text-primary-container">info</span>
-                        Hover over blocks to see individual ATM details
-                    </div>
-                </div>
-
-                <div
-                    class="rounded-2xl bg-surface-container-low border border-outline-variant/10 shadow-xl overflow-hidden">
-                    <div class="flex justify-between items-center px-6 py-5 border-b border-outline-variant/10">
-                        <div>
-                            <h3 class="font-headline text-label-sm uppercase tracking-widest text-on-surface-variant">
-                                Selected ATMs for Dispatch</h3>
-                            <p class="text-xs text-on-surface-variant/60 mt-0.5">ATMs chosen by DP to maximize urgency
-                                within truck capacity</p>
-                        </div>
-                        <span id="dispatch-count-badge"
-                            class="px-3 py-1 rounded-full text-xs font-black text-primary-container bg-primary-container/10 border border-primary-container/20">
-                            — ATMs
-                        </span>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="dispatch-table w-full">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>ATM</th>
-                                    <th>Location</th>
-                                    <th>Refill Amount</th>
-                                    <th>Time Left</th>
-                                    <th>Urgency</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dispatch-tbody">
-
-                                <tr>
-                                    <td colspan="7" class="text-center py-10 text-on-surface-variant/50 text-sm">
-                                        <span
-                                            class="material-symbols-outlined animate-spin block mx-auto mb-2">progress_activity</span>
-                                        Running knapsack optimizer…
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tfoot id="dispatch-tfoot" class="hidden">
-                                <tr class="dispatch-footer-row">
-                                    <td colspan="3"
-                                        class="text-right font-black uppercase tracking-wider text-on-surface-variant text-xs">
-                                        Totals</td>
-                                    <td id="foot-load" class="font-black text-primary-fixed-dim">—</td>
-                                    <td colspan="2"></td>
-                                    <td id="foot-urgency" class="font-black text-secondary-container">—</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-
-            </section>
             </div>
         </main>
     </div>

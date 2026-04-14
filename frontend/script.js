@@ -665,7 +665,7 @@ function renderTruckBar() {
 
 function renderDispatchTable() {
     const tbody       = document.getElementById('dispatch-tbody');
-    const tfoot       = document.getElementById('dispatch-tfoot');
+    const tfoot       = document.getElementById('dispatch-tfoot-wrapper');
     const badge       = document.getElementById('dispatch-count-badge');
     const footLoad    = document.getElementById('foot-load');
     const footUrgency = document.getElementById('foot-urgency');
@@ -684,15 +684,14 @@ function renderDispatchTable() {
         const tte  = Math.min(atm.timeToEmpty, 9999.99).toFixed(2);
         const rank = String(i + 1).padStart(2, '0');
 
-        return `<tr data-atm-id="${atm.id}" class="cursor-pointer"
+        return `<tr data-atm-id="${atm.id}" class="cursor-pointer border-b border-outline-variant/5 hover:bg-surface-container/50 transition-colors"
                     onclick="showPopup(atmData.find(a=>a.id===${atm.id}))">
-            <td class="font-black ${timeColor} w-8">${rank}</td>
-            <td class="font-bold uppercase tracking-tight">${atm.name}</td>
-            <td class="text-on-surface-variant">${atm.location}</td>
-            <td class="font-bold text-primary-fixed-dim">₹${(it.refillAmount / 100000).toFixed(2)}L</td>
-            <td class="font-bold ${timeColor}">${tte} hrs</td>
-            <td class="text-on-surface-variant">${it.value}</td>
-            <td><span class="status-badge ${cls}">${atm.status}</span></td>
+            <td class="p-3">
+                <div class="font-bold uppercase tracking-tight text-on-surface">${atm.name}</div>
+                <div class="text-[9px] font-black uppercase mt-0.5 ${timeColor} tracking-widest">${atm.status}</div>
+            </td>
+            <td class="p-3 font-bold ${timeColor}">${tte} hrs</td>
+            <td class="p-3 font-bold text-secondary-fixed-dim text-right">₹${(it.refillAmount / 100000).toFixed(2)}L</td>
         </tr>`;
     }).join('');
 
@@ -875,13 +874,17 @@ function renderOptimizationInsights() {
             const count = counts[k];
             const color = CLUSTER_COLORS[k] || '#FFFFFF';
             const truckNum = idx + 1;
+            const pct = Math.round((count / totalAssigned) * 100);
             return `
-                <div class="flex items-center justify-between group/row">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded box-border" style="background-color: ${color}40; border: 1px solid ${color}; shadow: 0 0 5px ${color}"></span>
-                        <span class="text-[10px] uppercase font-bold text-on-surface-variant transition-colors" style="color: ${color}80">Truck ${truckNum} Zone</span>
+                <div class="flex items-center justify-between bg-surface-container py-4 px-5 rounded-xl border-l-[4px] shadow-sm mb-2" style="border-left-color: ${color}">
+                    <div>
+                        <p class="text-sm font-bold text-on-surface uppercase tracking-wider">Truck ${truckNum} Zone</p>
+                        <p class="text-[10px] font-bold text-on-surface-variant uppercase mt-1">Geographic Cluster ${k}</p>
                     </div>
-                    <span class="text-sm font-bold text-on-surface">${count} ATMs</span>
+                    <div class="text-right">
+                        <p class="text-2xl font-black leading-none drop-shadow-md" style="color: ${color}">${count}</p>
+                        <p class="text-[10px] font-bold uppercase mt-1 opacity-70" style="color: ${color}">${pct}% of Fleet</p>
+                    </div>
                 </div>
             `;
         }).join('');

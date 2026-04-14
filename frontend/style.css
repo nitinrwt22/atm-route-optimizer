@@ -73,14 +73,36 @@ body {
     border-bottom: 1px solid color-mix(in srgb, var(--primary-container) 10%, transparent);
 }
 
-.atm-map-canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10;
-    cursor: crosshair;
-    display: block;
+/* Leaflet Map Overrides */
+.leaflet-container {
+    background: var(--surface-container-low);
+    font-family: 'Inter', sans-serif;
+}
+.leaflet-popup-content-wrapper {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+}
+.leaflet-popup-tip-container {
+    display: none;
+}
+.leaflet-top, .leaflet-bottom {
+    z-index: 10 !important;
+}
+.leaflet-control-zoom {
+    border: none !important;
+    background: var(--surface-container-high) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+}
+.leaflet-control-zoom a {
+    color: var(--primary-container) !important;
+    background: var(--surface-container-high) !important;
+    border-color: var(--outline-variant) !important;
+}
+.leaflet-control-zoom a:hover {
+    background: var(--surface-container-highest) !important;
 }
 
 .status-badge {
@@ -145,9 +167,34 @@ body {
     max-width: 240px;
     display: none;
 }
-.map-tooltip .tip-loc {
-    color: var(--on-surface-variant);
-    font-size: 10px;
+.leaflet-tooltip {
+    background: color-mix(in srgb, var(--surface-container-highest) 90%, transparent) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid color-mix(in srgb, var(--primary-container) 20%, transparent) !important;
+    color: var(--on-surface) !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    font-size: 11px !important;
+    line-height: 1.6 !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+.leaflet-tooltip::before {
+    display: none; /* Hide default leaflet tooltip arrow */
+}
+
+/* For Custom Marker Trucks */
+.truck-leaflet-marker {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 8px;
+    font-weight: 800;
+    color: white;
+    background: rgba(0,0,0,0.8);
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+    box-shadow: 0 0 10px currentColor;
+    white-space: nowrap;
 }
 
 .popup-card {

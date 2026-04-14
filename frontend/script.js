@@ -300,157 +300,51 @@ function setSVGArc(id, pct, offset) {
 
 let hoveredAtm = null;
 
+let map = null;
+let atmLayerGroup = null;
+let routeLayerGroup = null;
+let truckLayerGroup = null;
+let mapTrucks = []; // Store leaflet markers for animated trucks
+
+function initMap() {
+    if (map) return;
+    
+    // Initialize map centered at Depot (New Delhi - Connaught Place)
+    map = L.map('leaflet-map', {
+        zoomControl: false // customized placement
+    }).setView([28.63, 77.21], 12);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // CartoDB Dark Matter tile layer for cyberpunk aesthetic
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap & CARTO',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
+
+    atmLayerGroup = L.layerGroup().addTo(map);
+    routeLayerGroup = L.layerGroup().addTo(map);
+    truckLayerGroup = L.layerGroup().addTo(map);
+
+    // Initial Depot Marker setup
+    const depotIcon = L.divIcon({
+        className: 'truck-leaflet-marker',
+        html: `<div style="color: #00f2ff; font-size: 10px;">D</div>`,
+        iconSize: [20, 20]
+    });
+    L.marker([28.63, 77.21], {icon: depotIcon, zIndexOffset: 1000}).addTo(map)
+        .bindTooltip("Depot (Connaught Place)", {direction: "top"});
+}
+
 function renderMapMarkers() {
-    const canvas = document.getElementById('atm-map-canvas');
-    if (!canvas) return;
-
-    const container = canvas.parentElement;
-    canvas.width  = container.clientWidth;
-    canvas.height = container.clientHeight;
-
-    draw(canvas);
-
-    canvas.addEventListener('mousemove', e => {
-        const rect = canvas.getBoundingClientRect();
-        const mx   = e.clientX - rect.left;
-        const my   = e.clientY - rect.top;
-        hoveredAtm = findAtmAt(canvas, mx, my);
-        draw(canvas);
-        canvas.style.cursor = hoveredAtm ? 'pointer' : 'crosshair';
-        renderTooltip(hoveredAtm, e.clientX, e.clientY);
-    });
-
-    canvas.addEventListener('mouseleave', () => {
-        hoveredAtm = null;
-        draw(canvas);
-        hideTooltip();
-    });
-
-    canvas.addEventListener('click', e => {
-        const rect = canvas.getBoundingClientRect();
-        const mx   = e.clientX - rect.left;
-        const my   = e.clientY - rect.top;
-        const atm  = findAtmAt(canvas, mx, my);
-        if (atm) showPopup(atm);
-    });
-
-    window.addEventListener('resize', () => {
-        canvas.width  = container.clientWidth;
-        canvas.height = container.clientHeight;
-        draw(canvas);
-    });
-}
-
-function atmToCanvas(atm, canvas) {
-    // Phase 1 temporary mapping: Normalize real-world Delhi bounding box back to canvas percentages
-    const minLng = 77.00, maxLng = 77.35;
-    const minLat = 28.50, maxLat = 28.75;
+    if (!document.getElementById('leaflet-map')) return;
+    if (!map) initMap();
     
-    // Prevent division by zero and cap bounding box
-    let normX = (atm.x - minLng) / (maxLng - minLng);
-    let normY = (atm.y - minLat) / (maxLat - minLat);
+    atmLayerGroup.clearLayers();
+    routeLayerGroup.clearLayers();
     
-    // Fallback for Depot or exact matches
-    if (atm.x === 77.21) normX = (77.21 - minLng) / (maxLng - minLng);
-    if (atm.y === 28.63) normY = (28.63 - minLat) / (maxLat - minLat);
-
-    const pad = 0.15; // Increased padding from 0.08 so the depot moves away from the top-left corner UI panels
-    const cx  = (pad + normX * (1 - 2 * pad)) * canvas.width;
-    const cy  = (pad + normY * (1 - 2 * pad)) * canvas.height;
-    return { cx, cy };
-}
-
-let _ringPhase = 0;
-let _ringAnim  = null;
-
-function startRingAnimation(canvas) {
-    if (_ringAnim) return;
-    const step = () => {
-        _ringPhase = (Date.now() % 1600) / 1600;
-        draw(canvas);
-        _ringAnim = requestAnimationFrame(step);
-    };
-    _ringAnim = requestAnimationFrame(step);
-}
-
-function renderRoutePath(canvas, ctx, routeArr, color, isDashed, drawIds) {
-    if (!routeArr || routeArr.length === 0) return;
-
-    ctx.save();
-    ctx.beginPath();
-    
-    // Depot coordinates (77.21, 28.63) - Connaught Place
-    const depot = { x: 77.21, y: 28.63 };
-    const { cx: startCx, cy: startCy } = atmToCanvas(depot, canvas);
-    
-    ctx.moveTo(startCx, startCy);
-    
-    if (isDashed) {
-        ctx.setLineDash([5, 5]);
-        ctx.globalAlpha = 0.5;
-        ctx.lineWidth = 1.5;
-    } else {
-        ctx.lineWidth = 2;
-    }
-    
-    const points = [{cx: startCx, cy: startCy, isDepot: true}];
-    for (const stop of routeArr) {
-        const { cx, cy } = atmToCanvas(stop, canvas);
-        ctx.lineTo(cx, cy);
-        points.push({cx, cy, id: stop.id});
-    }
-
-    ctx.strokeStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = isDashed ? 0 : 10;
-    ctx.stroke();
-    
-    ctx.restore();
-
-    if (drawIds) drawRouteNumbers(ctx, points);
-}
-
-function drawRouteNumbers(ctx, points) {
-    ctx.save();
-    ctx.font = "bold 10px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    
-    for (let i = 1; i < points.length; i++) {
-        const pt = points[i];
-        
-        ctx.fillStyle = "#1e293b";
-        ctx.beginPath();
-        ctx.arc(pt.cx + 10, pt.cy - 10, 8, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = "#00f2ff";
-        ctx.stroke();
-        
-        ctx.fillStyle = "#00f2ff";
-        ctx.fillText(i, pt.cx + 10, pt.cy - 10);
-    }
-    
-    const depotPt = points[0];
-    ctx.fillStyle = "#00f2ff";
-    ctx.beginPath();
-    ctx.arc(depotPt.cx, depotPt.cy, 8, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.fillStyle = "#000000";
-    ctx.fillText("D", depotPt.cx, depotPt.cy);
-    
-    ctx.restore();
-}
-
-function stopRingAnimation(canvas) {
-    if (_ringAnim) { cancelAnimationFrame(_ringAnim); _ringAnim = null; }
-    draw(canvas);
-}
-
-function draw(canvas) {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    // 1. Draw Routes
     if (routeData && routeData.length > 0) {
         const baseRoute = (showOptimizedRoute && optimizedRouteData && optimizedRouteData.length > 0) ? optimizedRouteData : routeData;
         
@@ -460,220 +354,141 @@ function draw(canvas) {
         for (let i = 0; i < 3; i++) {
             const clusterRoute = baseRoute.filter(stop => {
                 const atm = atmData.find(a => a.id === stop.id);
-                return atm && atm.cluster === i;
+                return (atm && atm.cluster === i) || (stop.id === 0);
             });
+            
             if (clusterRoute.length > 0) {
-                renderRoutePath(canvas, ctx, clusterRoute, colors[i], false, true);
+                drawLeafletRoute(clusterRoute, colors[i]);
                 hasClusteredRoute = true;
             }
         }
         
-        // Fallback to single unified route if no clusters found
         if (!hasClusteredRoute) {
             const singleColor = showOptimizedRoute ? '#00f2ff' : '#f97316';
-            renderRoutePath(canvas, ctx, baseRoute, singleColor, false, true);
+            drawLeafletRoute(baseRoute, singleColor);
         }
     }
-
+    
+    // 2. Draw ATMs
     atmData.forEach(atm => {
-        const { cx, cy } = atmToCanvas(atm, canvas);
         let color = getInterpolatedColor(atm.cashLevel);
-        
         if (clusterModeActive && atm.cluster !== undefined && atm.cluster >= 0) {
             color = CLUSTER_COLORS[atm.cluster] || color;
         }
 
-        const isHovered  = hoveredAtm && hoveredAtm.id === atm.id;
         const isSelected = knapsackSelected.has(atm.id);
+        const opacity = (dispatchMode && !isSelected) ? 0.3 : 1;
+        const radius = atm.status === 'CRITICAL' ? 7 : 5;
+        
+        const circleParams = {
+            radius: dispatchMode && isSelected ? 8 : radius,
+            color: dispatchMode && isSelected ? '#00f2ff' : color,
+            weight: atm.status === 'CRITICAL' ? 2 : 1,
+            fillColor: dispatchMode && isSelected ? '#00f2ff' : color,
+            fillOpacity: opacity,
+            opacity: opacity
+        };
 
-        if (dispatchMode && !isSelected && !isHovered) {
-            ctx.globalAlpha = 0.18;
-        } else {
-            ctx.globalAlpha = 1;
+        const marker = L.circleMarker([atm.y, atm.x], circleParams);
+        
+        const tte = Math.min(atm.timeToEmpty, 9999.99).toFixed(1);
+        const tooltipHtml = `
+            <strong>${atm.name}</strong> — <span class="${STATUS_LABEL_CLASS[atm.status]}">${atm.status}</span><br>
+            <span class="tip-loc" style="color:var(--on-surface-variant);font-size:10px;">${atm.location}</span><br>
+            Cash: ${atm.cashLevel.toFixed(1)}% &nbsp;|&nbsp; Time Left: ${tte} hrs`;
+            
+        marker.bindTooltip(tooltipHtml, { direction: 'top' });
+        marker.on('click', () => showPopup(atm));
+        
+        atmLayerGroup.addLayer(marker);
+
+        // Add glow ring for selected/critical
+        if (dispatchMode && isSelected || atm.status === 'CRITICAL') {
+             L.circleMarker([atm.y, atm.x], {
+                radius: dispatchMode && isSelected ? 12 : 10,
+                color: dispatchMode && isSelected ? '#00f2ff' : color,
+                weight: 1.5,
+                fillColor: 'transparent',
+                opacity: 0.6
+            }).addTo(atmLayerGroup);
         }
-
-        const r = isHovered ? 8 : (atm.status === 'CRITICAL' ? 7 : 5);
-
-        ctx.shadowColor = dispatchMode && isSelected ? '#00f2ff' : color;
-        ctx.shadowBlur  = isHovered ? 20
-                        : (dispatchMode && isSelected) ? 22
-                        : (atm.status === 'CRITICAL' ? 14 : 8);
-
-        if (dispatchMode && isSelected) {
-            const phase  = (Math.sin(_ringPhase * Math.PI * 2) + 1) / 2;
-            const ringR  = r + 6 + phase * 6;
-            const alpha  = 0.7 - phase * 0.5;
-            ctx.beginPath();
-            ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(0, 242, 255, ${alpha})`;
-            ctx.lineWidth   = 2;
-            ctx.shadowColor = '#00f2ff';
-            ctx.shadowBlur  = 10;
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-
-            ctx.beginPath();
-            ctx.arc(cx, cy, r + 3, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(0, 242, 255, 0.6)';
-            ctx.lineWidth   = 1.5;
-            ctx.stroke();
-        }
-
-        if (atm.status === 'CRITICAL') {
-            ctx.beginPath();
-            ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
-            ctx.strokeStyle = color + '60';
-            ctx.lineWidth   = 2;
-            ctx.stroke();
-        }
-
-        ctx.shadowColor = dispatchMode && isSelected ? '#00f2ff' : color;
-        ctx.shadowBlur  = isHovered ? 20
-                        : (dispatchMode && isSelected) ? 18
-                        : (atm.status === 'CRITICAL' ? 14 : 8);
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = dispatchMode && isSelected ? '#00f2ff' : color;
-        ctx.fill();
-
-        ctx.shadowBlur  = 0;
-        ctx.globalAlpha = 1;
     });
 
+    // 3. Draw Centroids
     if (clusterModeActive && clusterCentroids) {
         clusterCentroids.forEach((centroid, i) => {
-            const { cx, cy } = atmToCanvas(centroid, canvas);
             const color = CLUSTER_COLORS[centroid.cluster] || '#FFFFFF';
-            
-            ctx.shadowColor = color;
-            ctx.shadowBlur = 15;
-            
-            ctx.beginPath();
-            ctx.arc(cx, cy, 12, 0, Math.PI * 2);
-            ctx.fillStyle = color;
-            ctx.fill();
-            
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.stroke();
-            
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = 'bold 12px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            // Draw label background
-            const label = `Truck ${i + 1}`;
-            const textWidth = ctx.measureText(label).width;
-            ctx.fillStyle = 'rgba(0,0,0,0.7)';
-            ctx.beginPath();
-            ctx.roundRect(cx - textWidth/2 - 4, cy - 30, textWidth + 8, 16, 4);
-            ctx.fill();
-            
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillText(label, cx, cy - 22);
+            const html = `<div style="background-color:rgba(0,0,0,0.7);color:white;padding:2px 6px;border-radius:4px;border:2px solid ${color};white-space:nowrap;">Truck ${i + 1}</div>`;
+            const icon = L.divIcon({ className: 'custom-centroid', html: html, iconSize: [50, 20] });
+            L.marker([centroid.y, centroid.x], {icon: icon}).addTo(atmLayerGroup);
         });
     }
 
+    // 4. Update Animated Trucks
     if (typeof trucks !== 'undefined' && trucks) {
+        // Clear old ones
+        truckLayerGroup.clearLayers();
+        mapTrucks = [];
+        
         trucks.forEach((t, idx) => {
             if (t.active) {
-                const { cx, cy } = atmToCanvas({x: t.x, y: t.y}, canvas);
-                
-                let targetX = 0;
-                let targetY = 0;
-                if (t.route && t.currentRouteIndex < t.route.length) {
-                    targetX = t.route[t.currentRouteIndex].x || 0;
-                    targetY = t.route[t.currentRouteIndex].y || 0;
-                }
-                const { cx: tgtCx, cy: tgtCy } = atmToCanvas({x: targetX, y: targetY}, canvas);
-                
-                let angle = Math.atan2(tgtCy - cy, tgtCx - cx);
-                if (isNaN(angle)) angle = 0;
-                
-                ctx.save();
-                ctx.translate(cx, cy);
-                ctx.rotate(angle);
-                
-                // Draw Google Navigation Arrow 
-                ctx.shadowColor = t.color;
-                ctx.shadowBlur = 12;
-                ctx.beginPath();
-                ctx.moveTo(12, 0);        
-                ctx.lineTo(-8, -8);       
-                ctx.lineTo(-4, 0);        
-                ctx.lineTo(-8, 8);        
-                ctx.closePath();
-                
-                ctx.fillStyle = t.color;
-                ctx.fill();
-                
-                ctx.lineWidth = 1.5;
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.stroke();
-                
-                ctx.restore();
-                
-                // Draw floating label upright
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = 'bold 9px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                
-                const tag = 'T' + (idx + 1);
-                const textW = ctx.measureText(tag).width;
-                ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                ctx.beginPath();
-                if (ctx.roundRect) {
-                    ctx.roundRect(cx - textW/2 - 3, cy - 24, textW + 6, 14, 3);
-                } else {
-                    ctx.rect(cx - textW/2 - 3, cy - 24, textW + 6, 14);
-                }
-                ctx.fill();
-                
-                ctx.fillStyle = t.color;
-                ctx.fillText(tag, cx, cy - 17);
+                const icon = L.divIcon({
+                    className: 'truck-leaflet-marker',
+                    html: `T${idx + 1}`,
+                    iconSize: [20, 20]
+                });
+                // Note: t.y is lat, t.x is lnt in reality.
+                const marker = L.marker([t.y, t.x], {icon: icon, zIndexOffset: 2000}).addTo(truckLayerGroup);
+                marker.truckId = idx;
+                mapTrucks.push(marker);
             }
         });
     }
 }
 
-function findAtmAt(canvas, mx, my) {
-    for (const atm of atmData) {
-        const { cx, cy } = atmToCanvas(atm, canvas);
-        const dist = Math.sqrt((mx - cx) ** 2 + (my - cy) ** 2);
-        if (dist <= 12) return atm;
+function drawLeafletRoute(routeArr, color) {
+    if (!routeArr || routeArr.length === 0) return;
+    
+    // Draw edges
+    const latLngs = [];
+    const pointsList = []; // to trace IDs
+    
+    // Add Depot
+    const depot = [28.63, 77.21];
+    latLngs.push(depot);
+    pointsList.push({ id: 0, lat: 28.63, lng: 77.21 });
+    
+    for (const stop of routeArr) {
+        // Some route segments might only have IDs without x/y depending on logic
+        const atm = atmData.find(a => a.id === stop.id);
+        if (atm) {
+            latLngs.push([atm.y, atm.x]);
+            pointsList.push({ id: stop.id, lat: atm.y, lng: atm.x});
+        }
     }
-    return null;
-}
-
-function renderTooltip(atm, px, py) {
-    let tip = document.getElementById('map-tooltip');
-    if (!tip) {
-        tip = document.createElement('div');
-        tip.id = 'map-tooltip';
-        tip.className = 'map-tooltip';
-        document.body.appendChild(tip);
+    
+    L.polyline(latLngs, {
+        color: color,
+        weight: 2,
+        opacity: 0.8
+    }).addTo(routeLayerGroup);
+    
+    // Draw Route step numbers
+    for (let i = 1; i < pointsList.length; i++) {
+        const pt = pointsList[i];
+        const icon = L.divIcon({
+            className: 'truck-leaflet-marker',
+            html: `<div style="background:#1e293b;width:16px;height:16px;border-radius:50%;color:${color};display:flex;align-items:center;justify-content:center;">${i}</div>`,
+            iconSize: [16, 16]
+        });
+        L.marker([pt.lat, pt.lng], {icon: icon}).addTo(routeLayerGroup);
     }
-    if (!atm) { tip.style.display = 'none'; return; }
-
-    const tte = Math.min(atm.timeToEmpty, 9999.99).toFixed(1);
-    tip.innerHTML = `
-        <strong>${atm.name}</strong> — <span class="${STATUS_LABEL_CLASS[atm.status]}">${atm.status}</span><br>
-        <span class="tip-loc">${atm.location}</span><br>
-        Cash: ${atm.cashLevel.toFixed(1)}% &nbsp;|&nbsp; Time Left: ${tte} hrs
-    `;
-    tip.style.display = 'block';
-    tip.style.left    = (px + 14) + 'px';
-    tip.style.top     = (py - 10) + 'px';
 }
 
-function hideTooltip() {
-    const tip = document.getElementById('map-tooltip');
-    if (tip) tip.style.display = 'none';
-}
+// Obsolete stubs for canvas animation compatibility
+function startRingAnimation(c) {}
+function stopRingAnimation(c) {}
+function draw(c) {}
 
 function showPopup(atm) {
     const popup = document.getElementById('atm-popup');
@@ -1126,6 +941,12 @@ function updateTruckPositions() {
         t.x = (isNaN(t.x) ? 0 : t.x) + (targetX - (isNaN(t.x) ? 0 : t.x)) * speedFactor;
         t.y = (isNaN(t.y) ? 0 : t.y) + (targetY - (isNaN(t.y) ? 0 : t.y)) * speedFactor;
         
+        // Update Leaflet Truck Marker
+        if (typeof mapTrucks !== 'undefined' && mapTrucks.length > 0) {
+            const marker = mapTrucks.find(m => m.truckId === t.id);
+            if (marker) marker.setLatLng([t.y, t.x]);
+        }
+        
         checkArrival(t, targetX, targetY, targetId, t.route.length);
     });
 }
@@ -1288,9 +1109,13 @@ function switchTab(tabId) {
         mobileTabs[index].classList.add('text-primary-container');
     }
     
-    // Trigger resize to fix canvas sizing if map tab becomes visible
+    // Trigger invalidateSize to fix leaflet map loading when it was previously display:none
     if (tabId === 'map') {
-        window.dispatchEvent(new Event('resize'));
+        setTimeout(() => {
+            if (typeof map !== 'undefined' && map) {
+                map.invalidateSize();
+            }
+        }, 50);
     }
 }
 

@@ -436,7 +436,7 @@ function renderMapMarkers() {
         mapTrucks = [];
         
         trucks.forEach((t, idx) => {
-            if (t.active) {
+            if (t.route && t.route.length > 0) { // Keep drawn even when paused
                 const icon = L.divIcon({
                     className: 'truck-leaflet-marker',
                     html: `T${idx + 1}`,
@@ -1080,6 +1080,11 @@ function resetSimulation() {
     if (truckAnimFrame) {
         cancelAnimationFrame(truckAnimFrame);
         truckAnimFrame = null;
+    }
+    
+    // Force route regeneration to inject cached OSRM paths onto new truck instances
+    if (typeof currentRouteRenderHash !== 'undefined') {
+        currentRouteRenderHash = null;
     }
     
     if (originalATMData) {

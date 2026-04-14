@@ -930,10 +930,14 @@ function initializeTrucks() {
             currentRouteIndex: 0,
             active: false,
             color: colors[i],
-            route: []
+            route: [],
+            detailedPath: null,
+            pathIndex: 0
         });
     }
 }
+// Run once on script load so first RenderMapMarkers assigns OSRM correctly
+initializeTrucks();
 
 function assignRoutesToTrucks() {
     let baseRoute = [];
@@ -1054,7 +1058,10 @@ function startSimulation() {
     
     if (!trucks || trucks.length === 0) {
         initializeTrucks();
+        currentRouteRenderHash = null; // force reload if trucks were magically empty
+        renderMapMarkers();
     }
+    
     assignRoutesToTrucks();
     trucks.forEach(t => t.active = true);
     startTruckAnimation();

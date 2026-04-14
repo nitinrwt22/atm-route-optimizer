@@ -385,7 +385,7 @@ function renderMapMarkers() {
         }
 
         const isSelected = knapsackSelected.has(atm.id);
-        const opacity = (dispatchMode && !isSelected) ? 0.3 : 1;
+        const opacity = (dispatchMode && !isSelected) ? 0.05 : 1;
         const radius = atm.status === 'CRITICAL' ? 7 : 5;
         
         const circleParams = {
@@ -413,11 +413,11 @@ function renderMapMarkers() {
         // Add glow ring for selected/critical
         if (dispatchMode && isSelected || atm.status === 'CRITICAL') {
              L.circleMarker([atm.y, atm.x], {
-                radius: dispatchMode && isSelected ? 12 : 10,
+                radius: dispatchMode && isSelected ? 16 : 10,
                 color: dispatchMode && isSelected ? '#00f2ff' : color,
-                weight: 1.5,
+                weight: dispatchMode && isSelected ? 3 : 1.5,
                 fillColor: 'transparent',
-                opacity: 0.6
+                opacity: dispatchMode && isSelected ? 0.8 : 0.6
             }).addTo(atmLayerGroup);
         }
     });
@@ -602,18 +602,26 @@ const dispatchLabel  = document.getElementById('dispatch-mode-label');
 if (dispatchToggle) {
     dispatchToggle.addEventListener('click', () => {
         dispatchMode = !dispatchMode;
-        dispatchToggle.classList.toggle('active', dispatchMode);
+        
+        // Apply Dramatic Button CSS
+        dispatchToggle.classList.toggle('map-btn-active-purple', dispatchMode);
+        
         if (dispatchLabel) dispatchLabel.textContent = dispatchMode ? 'Dispatch: ON' : 'Dispatch: OFF';
 
+        // Canvas overlay (Legacy)
         const canvas = document.getElementById('atm-map-canvas');
         if (canvas) {
             if (dispatchMode) startRingAnimation(canvas);
             else              stopRingAnimation(canvas);
         }
 
+        // Table Highlighting
         document.querySelectorAll('#dispatch-tbody tr[data-atm-id]').forEach(row => {
             row.classList.toggle('dispatch-row-selected', dispatchMode);
         });
+
+        // Force Instant Leaflet Render
+        renderMapMarkers();
     });
 }
 
@@ -776,6 +784,11 @@ const routeToggleIcon = document.getElementById('route-toggle-icon');
 if (routeToggleBtn) {
     routeToggleBtn.addEventListener('click', () => {
         showOptimizedRoute = !showOptimizedRoute;
+        
+        // Apply Dramatic Button CSS
+        routeToggleBtn.classList.toggle('map-btn-active-cyan', showOptimizedRoute);
+        routeToggleBtn.classList.toggle('map-btn-active-orange', !showOptimizedRoute);
+
         if (routeToggleLabel) {
             routeToggleLabel.textContent = showOptimizedRoute ? '2-Opt: ON' : 'Nearest: ON';
             routeToggleLabel.className = `text-[10px] uppercase font-bold tracking-widest hidden md:inline ${showOptimizedRoute ? 'text-primary-container' : 'text-orange-400'}`;
@@ -784,8 +797,8 @@ if (routeToggleBtn) {
             routeToggleIcon.className = `material-symbols-outlined text-sm ${showOptimizedRoute ? 'text-on-surface' : 'text-orange-400'}`;
         }
         
-        const canvas = document.getElementById('atm-map-canvas');
-        if (canvas) draw(canvas);
+        // Force Instant Leaflet Render
+        renderMapMarkers();
     });
 }
 
@@ -798,6 +811,10 @@ const clusterLegend = document.getElementById('cluster-legend');
 if (clusterToggleBtn) {
     clusterToggleBtn.addEventListener('click', () => {
         clusterModeActive = !clusterModeActive;
+        
+        // Apply Dramatic Button CSS
+        clusterToggleBtn.classList.toggle('map-btn-active-cyan', clusterModeActive);
+
         if (clusterToggleLabel) {
             clusterToggleLabel.textContent = clusterModeActive ? 'Clusters: ON' : 'Clusters: OFF';
             clusterToggleLabel.className = `text-[10px] uppercase font-bold tracking-widest hidden md:inline ${clusterModeActive ? 'text-primary-container' : 'text-on-surface-variant'}`;
@@ -816,7 +833,8 @@ if (clusterToggleBtn) {
             }
         }
         
-        if (canvas) draw(canvas);
+        // Force Instant Leaflet Render
+        renderMapMarkers();
     });
 }
 

@@ -305,6 +305,8 @@ let atmLayerGroup = null;
 let routeLayerGroup = null;
 let truckLayerGroup = null;
 let mapTrucks = []; // Store leaflet markers for animated trucks
+let osrmCache = {};
+let currentRouteRenderHash = null;
 
 function initMap() {
     if (map) return;
@@ -342,11 +344,14 @@ function renderMapMarkers() {
     if (!map) initMap();
     
     atmLayerGroup.clearLayers();
-    routeLayerGroup.clearLayers();
     
-    // 1. Draw Routes
-    if (routeData && routeData.length > 0) {
-        const baseRoute = (showOptimizedRoute && optimizedRouteData && optimizedRouteData.length > 0) ? optimizedRouteData : routeData;
+    // 1. Draw Routes (Hash protected against 1s interval rate limits)
+    const baseRoute = (showOptimizedRoute && optimizedRouteData && optimizedRouteData.length > 0) ? optimizedRouteData : (routeData || []);
+    const hashData = baseRoute.map(r => r.id).join('-') + `_${clusterModeActive}_${showOptimizedRoute}`;
+    
+    if (currentRouteRenderHash !== hashData && baseRoute.length > 0) {
+        routeLayerGroup.clearLayers();
+        currentRouteRenderHash = hashData;
         
         let hasClusteredRoute = false;
         const colors = ['#3B82F6', '#10B981', '#A855F7'];
@@ -357,15 +362,15 @@ function renderMapMarkers() {
                 return (atm && atm.cluster === i) || (stop.id === 0);
             });
             
-            if (clusterRoute.length > 0) {
-                drawLeafletRoute(clusterRoute, colors[i]);
+            if (clusterRoute.length > 1) { // Needs at least Depot + 1 Target
+                drawLeafletRoute(clusterRoute, colors[i], i);
                 hasClusteredRoute = true;
             }
         }
         
         if (!hasClusteredRoute) {
             const singleColor = showOptimizedRoute ? '#00f2ff' : '#f97316';
-            drawLeafletRoute(baseRoute, singleColor);
+            drawLeafletRoute(baseRoute, singleColor, -1);
         }
     }
     
@@ -446,20 +451,17 @@ function renderMapMarkers() {
     }
 }
 
-function drawLeafletRoute(routeArr, color) {
+async function drawLeafletRoute(routeArr, color, truckId) {
     if (!routeArr || routeArr.length === 0) return;
     
-    // Draw edges
     const latLngs = [];
-    const pointsList = []; // to trace IDs
+    const pointsList = []; 
     
-    // Add Depot
-    const depot = [28.63, 77.21];
-    latLngs.push(depot);
+    // Depot
+    latLngs.push([28.63, 77.21]);
     pointsList.push({ id: 0, lat: 28.63, lng: 77.21 });
     
     for (const stop of routeArr) {
-        // Some route segments might only have IDs without x/y depending on logic
         const atm = atmData.find(a => a.id === stop.id);
         if (atm) {
             latLngs.push([atm.y, atm.x]);
@@ -467,9 +469,32 @@ function drawLeafletRoute(routeArr, color) {
         }
     }
     
-    L.polyline(latLngs, {
+    const cacheKey = pointsList.map(p => p.id).join('-');
+    let leafCoords = [];
+    
+    if (osrmCache[cacheKey]) {
+        leafCoords = osrmCache[cacheKey];
+    } else {
+        const coordsStr = pointsList.map(p => `${p.lng},${p.lat}`).join(';');
+        try {
+            const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`);
+            const data = await res.json();
+            if (data.routes && data.routes[0]) {
+                const routeGeom = data.routes[0].geometry.coordinates;
+                leafCoords = routeGeom.map(pt => [pt[1], pt[0]]);
+                osrmCache[cacheKey] = leafCoords;
+            } else {
+                leafCoords = latLngs; 
+            }
+        } catch(err) {
+            console.error('OSRM fail', err);
+            leafCoords = latLngs; 
+        }
+    }
+    
+    L.polyline(leafCoords, {
         color: color,
-        weight: 2,
+        weight: 3,
         opacity: 0.8
     }).addTo(routeLayerGroup);
     
@@ -478,10 +503,24 @@ function drawLeafletRoute(routeArr, color) {
         const pt = pointsList[i];
         const icon = L.divIcon({
             className: 'truck-leaflet-marker',
-            html: `<div style="background:#1e293b;width:16px;height:16px;border-radius:50%;color:${color};display:flex;align-items:center;justify-content:center;">${i}</div>`,
-            iconSize: [16, 16]
+            html: `<div style="background:#1e293b;width:14px;height:14px;border-radius:50%;color:${color};display:flex;align-items:center;justify-content:center;font-size:8px;">${i}</div>`,
+            iconSize: [14, 14]
         });
-        L.marker([pt.lat, pt.lng], {icon: icon}).addTo(routeLayerGroup);
+        L.marker([pt.lat, pt.lng], {icon: icon, zIndexOffset: 800}).addTo(routeLayerGroup);
+    }
+    
+    if (truckId !== undefined && typeof trucks !== 'undefined' && truckId >= 0 && truckId < trucks.length) {
+        const truck = trucks[truckId];
+        if (truck) {
+            truck.detailedPath = leafCoords;
+            truck.pathIndex = 0;
+        }
+    } else if (truckId === -1 && typeof trucks !== 'undefined') {
+        // Fallback unified route overrides truck 0 path if single route rendering
+        if (trucks[0]) {
+            trucks[0].detailedPath = leafCoords;
+            trucks[0].pathIndex = 0;
+        }
     }
 }
 
@@ -919,27 +958,36 @@ function assignRoutesToTrucks() {
 
 function updateTruckPositions() {
     trucks.forEach(t => {
-        if (!t.active || !t.route || t.route.length === 0) return;
+        if (!t.active || !t.detailedPath || t.detailedPath.length === 0) return;
+        if (t.pathIndex === undefined) t.pathIndex = 0;
         
-        let targetX = 0;
-        let targetY = 0;
-        let targetId = -1;
-        
-        if (t.currentRouteIndex < t.route.length) {
-            targetX = t.route[t.currentRouteIndex].x || 0;
-            targetY = t.route[t.currentRouteIndex].y || 0;
-            targetId = t.route[t.currentRouteIndex].id || -1;
-        } else {
-            targetX = 77.21;
-            targetY = 28.63;
-            targetId = 0;
+        if (t.pathIndex >= t.detailedPath.length) {
+            t.active = false;
+            return;
         }
         
-        const safeSpeed = (!isNaN(simulationSpeed) && simulationSpeed > 0) ? simulationSpeed : 1;
-        const speedFactor = safeSpeed * 0.05;
+        // node is [lat, lng]
+        let targetLat = t.detailedPath[t.pathIndex][0];
+        let targetLng = t.detailedPath[t.pathIndex][1];
         
-        t.x = (isNaN(t.x) ? 0 : t.x) + (targetX - (isNaN(t.x) ? 0 : t.x)) * speedFactor;
-        t.y = (isNaN(t.y) ? 0 : t.y) + (targetY - (isNaN(t.y) ? 0 : t.y)) * speedFactor;
+        const safeSpeed = (!isNaN(simulationSpeed) && simulationSpeed > 0) ? simulationSpeed : 1;
+        const speedFactor = safeSpeed * 0.0003; // fixed geographic degrees per frame
+        
+        const currentLng = isNaN(t.x) ? 77.21 : t.x;
+        const currentLat = isNaN(t.y) ? 28.63 : t.y;
+        
+        const dx = targetLng - currentLng;
+        const dy = targetLat - currentLat;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist <= speedFactor) {
+            t.x = targetLng;
+            t.y = targetLat;
+            t.pathIndex++;
+        } else {
+            t.x = currentLng + (dx/dist) * speedFactor;
+            t.y = currentLat + (dy/dist) * speedFactor;
+        }
         
         // Update Leaflet Truck Marker
         if (typeof mapTrucks !== 'undefined' && mapTrucks.length > 0) {
@@ -947,24 +995,25 @@ function updateTruckPositions() {
             if (marker) marker.setLatLng([t.y, t.x]);
         }
         
-        checkArrival(t, targetX, targetY, targetId, t.route.length);
+        // Check arrival at intended ATM stop
+        if (t.currentRouteIndex < t.route.length) {
+            let stopX = t.route[t.currentRouteIndex].x || 77.21;
+            let stopY = t.route[t.currentRouteIndex].y || 28.63;
+            let distToStop = Math.sqrt((stopX - t.x)**2 + (stopY - t.y)**2);
+            // Ultra-fine threshold since OSRM snaps to physical roads
+            if (distToStop < 0.003) {
+                const atmId = t.route[t.currentRouteIndex].id;
+                if (atmId > 0) refillATM(atmId);
+                t.currentRouteIndex++;
+            }
+        } else {
+            // Check Depot Return Condition
+            let distToStop = Math.sqrt((77.21 - t.x)**2 + (28.63 - t.y)**2);
+            if (distToStop < 0.003) {
+                 t.active = false; // complete
+            }
+        }
     });
-}
-
-function checkArrival(t, tx, ty, tId, routeLen) {
-    const dist = Math.sqrt((tx - t.x)**2 + (ty - t.y)**2);
-    if (dist < 1.0) {
-        t.x = tx;
-        t.y = ty;
-        
-        if (tId > 0) {
-            refillATM(tId);
-        }
-        t.currentRouteIndex++;
-        if (t.currentRouteIndex > routeLen) {
-            t.active = false;
-        }
-    }
 }
 
 function refillATM(atmId) {

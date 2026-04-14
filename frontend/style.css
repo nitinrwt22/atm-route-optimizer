@@ -63,8 +63,8 @@ body {
 .nav-active {
     color: var(--primary-container) !important;
     background: color-mix(in srgb, var(--primary-container) 10%, transparent) !important;
-    border-right: 2px solid var(--primary-container);
-    box-shadow: inset -10px 0 15px rgba(0, 242, 255, 0.05);
+    border-bottom: 2px solid var(--primary-container);
+    box-shadow: inset 0 -10px 15px rgba(0, 242, 255, 0.05);
 }
 
 .glass-panel {
@@ -139,6 +139,24 @@ body {
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* KPI Cards */
+.kpi-card {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+}
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 60%);
+    pointer-events: none;
+}
 
 .pulse-glow-red {
     box-shadow: 0 0 15px #c20014;

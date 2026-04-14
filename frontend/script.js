@@ -146,6 +146,7 @@ function renderAll() {
     renderDispatchTable();
     renderCashDistribution();
     renderOptimizationInsights();
+    updateTruckStatusPanel();
 }
 
 function computeKnapsack() {
@@ -217,11 +218,13 @@ function updateSummaryCard() {
     const total    = atmData.length;
     const critical = atmData.filter(a => a.status === 'CRITICAL').length;
     const avgTime  = atmData.reduce((s, a) => s + Math.min(a.timeToEmpty, 9999.99), 0) / total;
+    const avgCash  = atmData.reduce((s, a) => s + Math.min(a.cashLevel, 100), 0) / total;
 
     set('stat-total',    total);
     set('map-stat-total', total);
     set('stat-critical', critical);
     set('stat-avg-time', avgTime.toFixed(1) + ' hrs');
+    set('stat-avg-cash', avgCash.toFixed(1) + '%');
 }
 
 function renderUrgentPanel() {
@@ -835,29 +838,26 @@ function renderOptimizationInsights() {
             optDist = optimizedRouteData.totalDistance || calculateRouteDistance(optimizedRouteData);
         }
         const imp = nnDist > 0 ? ((nnDist - optDist) / nnDist) * 100 : 0;
+        const stops = routeData.length;
         
-        set('insight-route-nn', nnDist.toFixed(1) + ' km');
+        set('insight-route-nn',  nnDist.toFixed(1) + ' km');
         set('insight-route-opt', optDist.toFixed(1) + ' km');
-        set('insight-route-imp', imp.toFixed(1) + '%');
-    }
+        set('insight-route-imp', imp.toFixed(1) + '% saved');
+        set('insight-route-stops', stops + ' stops');
+        set('insight-route-imp-pct', imp.toFixed(1) + '%');
 
-    // 2. Capacity Utilization
-    if (knapsackStats) {
-        const { totalLoad, truckCapacityRupees } = knapsackStats;
-        const totalLoadLakhs = totalLoad / 100_000;
-        const maxLakhs = truckCapacityRupees / 100_000;
-        const pct = Math.min((totalLoad / truckCapacityRupees) * 100, 100);
-        
-        set('insight-capacity-text', `₹${totalLoadLakhs.toFixed(1)}L / ₹${maxLakhs.toFixed(0)}L`);
-        set('insight-capacity-pct', `${pct.toFixed(1)}%`);
-        
-        const capBar = document.getElementById('insight-capacity-bar');
-        if (capBar) {
-            setTimeout(() => { capBar.style.width = pct + '%'; }, 100);
+        // Update efficiency gauge
+        const effBar = document.getElementById('tsp-efficiency-bar');
+        const effLabel = document.getElementById('tsp-efficiency-label');
+        if (effBar && effLabel) {
+            const effPct = Math.min(100, Math.max(0, imp));
+            setTimeout(() => { effBar.style.width = effPct + '%'; }, 120);
+            effLabel.textContent = imp >= 10 ? 'Excellent' : imp >= 5 ? 'Good' : imp > 0 ? 'Marginal' : 'Baseline';
+            effLabel.style.color = imp >= 10 ? '#4ADE80' : imp >= 5 ? '#00dbe7' : imp > 0 ? '#FACC15' : '#b9cacb';
         }
     }
 
-    // 3. Cluster Distribution
+    // 2. Cluster Distribution (always render when data available)
     const clustersContainer = document.getElementById('insight-clusters-container');
     if (clustersContainer && clusterData && clusterData.length > 0) {
         const counts = {};
@@ -867,41 +867,70 @@ function renderOptimizationInsights() {
             totalAssigned++;
         });
         
-        // Convert to array and sort by cluster ID
-        const clusterKeys = Object.keys(counts).map(Number).sort((a,b)=>a-b);
+        const clusterKeys = Object.keys(counts).map(Number).sort((a, b) => a - b);
         
         clustersContainer.innerHTML = clusterKeys.map((k, idx) => {
             const count = counts[k];
             const color = CLUSTER_COLORS[k] || '#FFFFFF';
             const truckNum = idx + 1;
             const pct = Math.round((count / totalAssigned) * 100);
+            // Urgency breakdown within cluster
+            const clusterAtms = atmData.filter(a => a.cluster === k);
+            const critInCluster = clusterAtms.filter(a => a.status === 'CRITICAL').length;
             return `
-                <div class="flex items-center justify-between bg-surface-container py-4 px-5 rounded-xl border-l-[4px] shadow-sm mb-2" style="border-left-color: ${color}">
+                <div class="flex items-center justify-between bg-surface-container py-3 px-4 rounded-xl border-l-[3px] shadow-sm" style="border-left-color: ${color}">
                     <div>
                         <p class="text-sm font-bold text-on-surface uppercase tracking-wider">Truck ${truckNum} Zone</p>
-                        <p class="text-[10px] font-bold text-on-surface-variant uppercase mt-1">Geographic Cluster ${k}</p>
+                        <p class="text-[10px] font-bold text-on-surface-variant uppercase mt-0.5 tracking-widest">Cluster ${k} · ${critInCluster > 0 ? '<span style="color:#EF4444">' + critInCluster + ' critical</span>' : 'All clear'}</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-2xl font-black leading-none drop-shadow-md" style="color: ${color}">${count}</p>
-                        <p class="text-[10px] font-bold uppercase mt-1 opacity-70" style="color: ${color}">${pct}% of Fleet</p>
+                        <p class="text-2xl font-black leading-none" style="color: ${color}">${count}</p>
+                        <p class="text-[10px] font-bold uppercase mt-0.5 opacity-70" style="color: ${color}">${pct}% of fleet</p>
                     </div>
                 </div>
             `;
         }).join('');
     } else if (clustersContainer) {
-        clustersContainer.innerHTML = '<div class="text-[10px] text-on-surface-variant/50">Turn ON clusters to view zones</div>';
+        clustersContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-full gap-2 text-center">
+                <span class="material-symbols-outlined text-on-surface-variant/20 text-4xl">hub</span>
+                <p class="text-[10px] text-on-surface-variant/50 uppercase tracking-widest">No cluster data loaded</p>
+                <p class="text-[9px] text-on-surface-variant/30">Run K-Means backend to populate</p>
+            </div>`;
     }
 
-    // 4. Urgency Distribution Summary
+    // 3. Urgency Distribution Summary (in-module IDs if they exist)
     if (atmData && atmData.length > 0) {
         const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
         atmData.forEach(a => counts[a.status]++);
-        
         set('insight-urgency-critical', counts.CRITICAL);
-        set('insight-urgency-high', counts.HIGH);
-        set('insight-urgency-medium', counts.MEDIUM);
-        set('insight-urgency-low', counts.LOW);
+        set('insight-urgency-high',     counts.HIGH);
+        set('insight-urgency-medium',   counts.MEDIUM);
+        set('insight-urgency-low',      counts.LOW);
     }
+}
+
+function updateTruckStatusPanel() {
+    if (typeof trucks === 'undefined' || !trucks) return;
+    trucks.forEach((t, i) => {
+        const el = document.getElementById(`truck-${i + 1}-status`);
+        if (!el) return;
+        if (!simulationRunning && t.currentRouteIndex === 0) {
+            el.textContent = 'Standby';
+            el.style.color = 'var(--on-surface-variant)';
+        } else if (t.active) {
+            const stop = t.currentRouteIndex;
+            const total = t.route.length;
+            el.textContent = `En route · ${stop}/${total}`;
+            el.style.color = t.color || 'var(--primary-container)';
+        } else if (t.currentRouteIndex >= t.route.length && t.route.length > 0) {
+            el.textContent = 'Returned';
+            el.style.color = '#4ADE80';
+        } else {
+            el.textContent = 'Idle';
+            el.style.color = 'var(--on-surface-variant)';
+        }
+    });
 }
 
 let simulationRunning = false;
@@ -1063,7 +1092,9 @@ function startSimulation() {
     simulationRunning = true;
     simulationInterval = setInterval(() => {
         updateATMValues();
+        updateTruckStatusPanel();
     }, 1000);
+    updateTruckStatusPanel();
 }
 
 function pauseSimulation() {
@@ -1071,6 +1102,7 @@ function pauseSimulation() {
     simulationRunning = false;
     clearInterval(simulationInterval);
     trucks.forEach(t => t.active = false);
+    updateTruckStatusPanel();
 }
 
 function resetSimulation() {
@@ -1092,6 +1124,7 @@ function resetSimulation() {
         atmData = JSON.parse(JSON.stringify(originalATMData));
         renderAll();
     }
+    updateTruckStatusPanel();
 }
 
 function updateATMValues() {

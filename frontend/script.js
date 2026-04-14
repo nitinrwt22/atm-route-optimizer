@@ -582,15 +582,6 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-const sidebarToggle = document.getElementById('sidebar-toggle');
-const desktopSidebar = document.getElementById('desktop-sidebar');
-const layoutWrapper  = document.getElementById('layout-wrapper');
-if (sidebarToggle && desktopSidebar && layoutWrapper) {
-    sidebarToggle.addEventListener('click', () => {
-        desktopSidebar.classList.toggle('-translate-x-full');
-        layoutWrapper.classList.toggle('md:pl-64');
-    });
-}
 
 const runBtn = document.getElementById('run-optimization-btn');
 if (runBtn) {
